@@ -1,0 +1,92 @@
+---
+title: "Coverage based analysis of Human Cell Lines"
+author: "Stuart Lee"
+date: "26/10/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+                      fig.path = here::here("figures"), # processed figures go here
+                      fig.align = "center",
+                      comment = "#>", 
+                      cache = here::here("data") # store processed tables in data/
+                      )
+# Bioc Packages
+library(GenomicFeatures)
+library(plyranges)
+library(Rsamtools)
+
+# some viz ideas
+library(vegawidget)
+
+```
+
+
+## Dataset: RNA-seq from mixology experiment
+
+```{r}
+tbl <- read.table(
+  here::here("data-raw", "targets.txt"),
+  header = TRUE,
+  stringsAsFactors = FALSE
+  ) %>% 
+  transform(File = sub("\\.", "-", File)) %>%
+  as("DataFrame")
+
+tbl
+```
+
+
+## Processing Annotation File
+
+```{r}
+
+main_chr <- here::here("data-raw/", "R1-000_C5N4YANXX_ACAGTGAT_R1.bam") %>% 
+  read_bam() %>% 
+  get_genome_info() %>% 
+  keepStandardChromosomes("Homo sapiens", pruning.mode = "coarse") %>%
+  set_genome_info(genome = "hg20")
+
+isCircular(main_chr) <- as.logical(seqnames(main_chr) == "chrM")
+  
+txdb <- makeTxDbFromGFF(
+  here::here("data-raw", "gencode.v27.annotation.gtf.gz")
+)
+
+seqinfo(txdb) <- seqinfo(main_chr)
+
+# get genes
+features <- txdb %>%
+  genes()
+
+# exons for each gene,
+# merge overlapping exons
+features_exons <- txdb %>% 
+  exonsBy("gene") %>% 
+  reduce()
+
+md_features_exons <- DataFrame(
+  gene_id = Rle(names(features_exons), lengths = lengths(features_exons)),
+  feature_type = Rle(factor("exon", levels = c("exon", "intron")), 
+                     lengths = sum(lengths(features_exons)))
+)
+  
+
+# introns for each gene
+features_introns <- features %setdiff% features_exons
+md_features_introns <- DataFrame(
+  gene_id = Rle(names(features_introns), lengths = lengths(features_introns)),
+  feature_type = Rle(factor("intron", levels = c("exon", "intron")),
+                     lengths = sum(lengths(features_introns)))
+)
+
+# restore back to GRanges 
+features_exons <- unlist(features_exons, use.names = FALSE)
+mcols(features_exons) <- md_features_exons
+
+
+features_introns <- unlist(features_introns, use.names = FALSE)
+mcols(features_introns) <- md_feature_introns
+```
+
