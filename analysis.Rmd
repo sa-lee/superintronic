@@ -101,6 +101,7 @@ cvg <- here::here("data-raw/", "R1-000_C5N4YANXX_ACAGTGAT_R1.bam") %>%
 
 ```
 
+Coverage over features
 
 ```{r}
 cvg_feature_exon <- cvg %>% 
@@ -111,3 +112,13 @@ cvg_feature_intron <- cvg %>%
 
 
 ```
+
+
+Summary
+
+
+Report coverage summary values per gene of:
+	Trimmed mean (remove top and bottom 10%) coverage of exonic regions by gene
+	Trimmed mean coverage of intronic regions by gene
+	Number of intronic bases above THRESHOLD, where THRESHOLD is an appropriate coverage value defining moderately expressed exonic region. 
+Histogram (or equivalent) of coverage in exonic regions. 
