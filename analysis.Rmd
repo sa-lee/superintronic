@@ -116,9 +116,29 @@ cvg_feature_intron <- cvg %>%
 
 Summary
 
+Note need to reverse features for neg strand genes etc. 
 
 Report coverage summary values per gene of:
 	Trimmed mean (remove top and bottom 10%) coverage of exonic regions by gene
+```{r}
+trm_cvg_feature_exon <- cvg_feature_exon %>% 
+  group_by(gene_id) %>% 
+  summarise(mn_score = mean(log2(score + 1), trim = 0.1))
+```
+	
 	Trimmed mean coverage of intronic regions by gene
-	Number of intronic bases above THRESHOLD, where THRESHOLD is an appropriate coverage value defining moderately expressed exonic region. 
-Histogram (or equivalent) of coverage in exonic regions. 
+```{r}
+trm_cvg_feature_intron <- cvg_feature_intron %>% 
+  group_by(gene_id) %>% 
+  summarise(mn_score = mean(log2(score + 1), trim = 0.1))
+```
+
+  Histogram of exonic region coverage
+```{r}
+cvg_hist_exonic <- cvg_feature_exon %>% 
+  group_by(score) %>% 
+  summarise(n_bases = sum(width))
+```
+
+	Number of intronic bases above THRESHOLD, where THRESHOLD is an appropriate 
+	coverage value defining moderately expressed exonic region.
