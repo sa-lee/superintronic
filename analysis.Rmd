@@ -109,8 +109,6 @@ cvg_feature_exon <- cvg %>%
 
 cvg_feature_intron <- cvg %>% 
   join_overlap_intersect(features_introns)
-
-
 ```
 
 
@@ -127,6 +125,8 @@ trm_cvg_feature_exon <- cvg_feature_exon %>%
 ```
 	
 	Trimmed mean coverage of intronic regions by gene
+
+	
 ```{r}
 trm_cvg_feature_intron <- cvg_feature_intron %>% 
   group_by(gene_id) %>% 
@@ -140,5 +140,15 @@ cvg_hist_exonic <- cvg_feature_exon %>%
   summarise(n_bases = sum(width))
 ```
 
-	Number of intronic bases above THRESHOLD, where THRESHOLD is an appropriate 
+
+		Number of intronic bases above THRESHOLD, where THRESHOLD is an appropriate 
 	coverage value defining moderately expressed exonic region.
+```{r}
+cvg_filter <- cvg_feature_intron %>%
+  group_by(gene_id, score) %>% 
+  summarise(n_bases = sum(width)) %>% 
+  filter(score > THRESHOLD)
+	  
+```
+	
+	
