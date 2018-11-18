@@ -1,7 +1,7 @@
 ---
 title: "Coverage based analysis of Human Cell Lines"
 author: "Stuart Lee"
-date: "26/10/2018"
+date: "`r Sys.date()`"
 output: html_document
 ---
 
@@ -10,7 +10,9 @@ knitr::opts_chunk$set(
                       fig.path = here::here("figures"), # processed figures go here
                       fig.align = "center",
                       comment = "#>", 
-                      cache = here::here("data") # store processed tables in data/
+                      cache = here::here("data"), # store processed tables in data/
+                      message = FALSE,
+                      warning = FALSE
                       )
 # Bioc Packages
 library(GenomicFeatures)
@@ -18,14 +20,29 @@ library(plyranges)
 library(Rsamtools)
 
 # some viz ideas
+library(ggplot2)
 library(vegawidget)
+
+# -- functions
+flattenMD <- function(x, type = "exon") {
+  type <- match.arg(type, choices =c("exon", "intron"))
+  n_features_in_genes <- lengths(x)
+  DataFrame(
+    gene_id = Rle(names(x), lengths = n_features_in_genes),
+    feature_type = Rle(factor(type, levels = c("exon", "intron")), 
+                     lengths = sum(n_features_in_genes)),
+    feature_rank = unlist(lapply(n_features_in_genes, seq_len), use.names = FALSE),
+    feature_length = unlist(width(x), use.names = FALSE),
+    feature_strand = unlist(strand(x), use.names = FALSE)
+  )
+}
 
 ```
 
 
 ## Dataset: RNA-seq from mixology experiment
 
-```{r}
+```{r exp-design}
 tbl <- read.table(
   here::here("data-raw", "targets.txt"),
   header = TRUE,
@@ -37,24 +54,81 @@ tbl <- read.table(
 tbl
 ```
 
+We take the six replicates for the unmixed HCC827 cell line and 
+collect the file paths as a BamFileList. We also reduce the reference
+annotations to main contigs of the genome build.
 
-## Processing Annotation File
+```{r unmixed-bams}
+unmixed <- tbl %>% 
+  subset(Replicate %in% c("R1", "R2", "R3") & Mixture == 0) %>% 
+  transform(Sample = paste0(Replicate, "_", "HCC287"),
+            CellLine = "HCC287")
+unmixed
 
-```{r}
+bams <- lapply(
+  unmixed$File, 
+  function(.) BamFile(here::here("data-raw", .))
+  ) %>% 
+  BamFileList()
 
-main_chr <- here::here("data-raw/", "R1-000_C5N4YANXX_ACAGTGAT_R1.bam") %>% 
-  read_bam() %>% 
+
+main_chr <- bams %>% 
   get_genome_info() %>% 
   keepStandardChromosomes("Homo sapiens", pruning.mode = "coarse") %>%
   set_genome_info(genome = "hg20")
 
 isCircular(main_chr) <- as.logical(seqnames(main_chr) == "chrM")
-  
-txdb <- makeTxDbFromGFF(
-  here::here("data-raw", "gencode.v27.annotation.gtf.gz")
-)
+```
 
-seqinfo(txdb) <- seqinfo(main_chr)
+## Computing coverage
+
+Once we have the paths to our `BamFiles` we can compute coverage
+in parallel using `BiocParallel` with `plyranges`. We will only keep
+coverage scores over the main chromosomes of the reference.
+
+```{r bam-coverage, cache = TRUE}
+compute_clean_coverage <- function(x) {
+  cvg <- compute_coverage(x) %>%
+    keepStandardChromosomes("Homo sapiens", pruning.mode = "coarse") %>% 
+    set_genome_info(genome = "hg20")
+  cvg
+}
+
+# process coverage in parallel
+cvg <- BiocParallel::bplapply(
+  bams, 
+  FUN = compute_clean_coverage,
+  BPPARAM = BiocParallel::MulticoreParam(workers = 6)
+  ) %>% 
+  GRangesList()
+
+# add some metadata to coverage scores
+md_cvg <- unmixed %>% 
+  subset(select = c(Sample, Replicate, Kit)) %>% 
+  transform(
+    Sample = as(Sample, "Rle"),
+    Replicate = as(Replicate, "Rle"),
+    Kit = as(Kit, "Rle")
+  )
+
+# go from list to long form
+n_grps <- lengths(cvg)
+cvg <- unlist(cvg, use.names = FALSE)
+mcols(cvg) <- cbind(
+  mcols(cvg),
+  md_cvg[rep.int(seq_len(nrow(unmixed)), n_grps), ]
+  )
+```
+
+## Processing Annotation File
+
+We construct an annotation database from the gencode annotation gtf provided.
+
+```{r make-features-db, cache =TRUE}
+txdb <- makeTxDbFromGFF(
+  here::here("data-raw", "gencode.v27.annotation.gtf.gz"),
+  chrominfo = seqinfo(main_chr)
+)
 
 # get genes
 features <- txdb %>%
@@ -66,89 +140,79 @@ features_exons <- txdb %>%
   exonsBy("gene") %>% 
   reduce()
 
-md_features_exons <- DataFrame(
-  gene_id = Rle(names(features_exons), lengths = lengths(features_exons)),
-  feature_type = Rle(factor("exon", levels = c("exon", "intron")), 
-                     lengths = sum(lengths(features_exons)))
-)
-  
-
-# introns for each gene
+# introns for each gene, take the parallel set difference
 features_introns <- features %setdiff% features_exons
-md_features_introns <- DataFrame(
-  gene_id = Rle(names(features_introns), lengths = lengths(features_introns)),
-  feature_type = Rle(factor("intron", levels = c("exon", "intron")),
-                     lengths = sum(lengths(features_introns)))
-)
+```
 
-# restore back to GRanges 
-features_exons <- unlist(features_exons, use.names = FALSE)
-mcols(features_exons) <- md_features_exons
+Once we have each list of features, we flatten them back to long form GRanges.
+We also carry over metadata for each feature, such as total width, strand etc. 
+as well. We then combine the features together into a single GRanges object.
 
+```{r features-long-form, cache=TRUE}
+# restore back to flat GRanges 
+md_exons <- flattenMD(features_exons)
+features_exons <- unlist(features_exons, use.names = FALSE) 
+mcols(features_exons) <- md_exons
 
+md_introns <- flattenMD(features_introns, type = "intron")
 features_introns <- unlist(features_introns, use.names = FALSE)
-mcols(features_introns) <- md_feature_introns
+mcols(features_introns) <- md_introns
+
+features_combined <- bind_ranges(features_exons, features_introns) %>% 
+  sort()
+features_combined
 ```
 
 
-```{r}
-# coverage computation, one bam, should function this out
-cvg <- here::here("data-raw/", "R1-000_C5N4YANXX_ACAGTGAT_R1.bam") %>% 
-  compute_coverage() %>% 
-  filter_by_overlaps(main_chr) %>% 
-  keepStandardChromosomes("Homo sapiens", pruning.mode = "coarse") %>%
-  set_genome_info(genome = "hg20")
+## Coverage summaries over features of interest
 
+We use an overlap join, to compute the intersect overlap of the coverage
+ranges with the annotated features of interest. 
+
+```{r olap-join-intersect, cache = TRUE}
+cvg_features <- cvg %>% 
+  join_overlap_intersect(features_combined)
 ```
 
-Coverage over features
+We can now start computing summaries and visualisations 
+over the samples of interest. For example, we can plot per base coverage (0 - 300x) 
+histograms for exon and intron features.
 
-```{r}
-cvg_feature_exon <- cvg %>% 
-  join_overlap_intersect(features_exons)
+```{r cvg-histogram}
+cvg_hist <- cvg_features %>% 
+  group_by(Replicate, Kit, feature_type, score) %>% 
+  summarise(n_bases = sum(width)) 
 
-cvg_feature_intron <- cvg %>% 
-  join_overlap_intersect(features_introns)
+ggplot(as.data.frame(cvg_hist) %>% 
+         filter(score < 300),
+       aes(x = score, y = n_bases , color = feature_type)) +
+  geom_line() +
+  scale_y_log10() +
+  facet_grid(Kit ~ Replicate)
 ```
-
-
-Summary
 
 Note need to reverse features for neg strand genes etc. 
 
-Report coverage summary values per gene of:
-	Trimmed mean (remove top and bottom 10%) coverage of exonic regions by gene
-```{r}
-trm_cvg_feature_exon <- cvg_feature_exon %>% 
-  group_by(gene_id) %>% 
-  summarise(mn_score = mean(log2(score + 1), trim = 0.1))
-```
-	
+Herew we report coverage summary values per gene of:
+	Trimmed mean (remove top and bottom 10%) coverage of exonic regions 
 	Trimmed mean coverage of intronic regions by gene
 
-	
-```{r}
-trm_cvg_feature_intron <- cvg_feature_intron %>% 
-  group_by(gene_id) %>% 
-  summarise(mn_score = mean(log2(score + 1), trim = 0.1))
+We also produce a scatter plot over all genes of the trimmed scores for exons
+against introns.
+
+```{r tm-est}
+tm_cvg <- cvg_features %>% 
+  group_by(feature_type, gene_id) %>% 
+  summarise(tm_score = mean(log2(score + 1), trim = 0.1))
+
+tm_cvg %>% 
+  as.data.frame() %>% 
+  tidyr::spread(feature_type, tm_score) %>% 
+  ggplot(aes(intron, exon)) + 
+  naniar::geom_miss_point(alpha = 0.1) 
 ```
 
-  Histogram of exonic region coverage
-```{r}
-cvg_hist_exonic <- cvg_feature_exon %>% 
-  group_by(score) %>% 
-  summarise(n_bases = sum(width))
-```
 
+Idea: link this plot to coverage browser 
 
-		Number of intronic bases above THRESHOLD, where THRESHOLD is an appropriate 
-	coverage value defining moderately expressed exonic region.
-```{r}
-cvg_filter <- cvg_feature_intron %>%
-  group_by(gene_id, score) %>% 
-  summarise(n_bases = sum(width)) %>% 
-  filter(score > THRESHOLD)
-	  
-```
-	
 	
