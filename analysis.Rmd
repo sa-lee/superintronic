@@ -241,12 +241,11 @@ sdata <- tm_cvg_wide %>%
   dplyr::left_join(anno_df)
 
 scatter <- list(
-  `$schema` = vega_schema("vega_lite"),
   data = list(values = sdata),
   selection = list(
     "get_gene" = list(type = "single")
   ),
-  mark = "point",
+  mark = "circle",
   encoding = list(
     x = list(field = "intron", type = "quantitative"),
     y = list(field = "exon", type = "quantitative"),
@@ -257,6 +256,7 @@ scatter <- list(
       ),
       value = "grey"
     ),
+    opacity = list(value = 0.2),
     tooltip = list(
       list(field = "seqnames", type = "ordinal"),
       list(field = "gene_name", type = "ordinal"),
@@ -266,17 +266,40 @@ scatter <- list(
 )
 
 
+example_gene <- cvg %>% 
+  filter_by_overlaps(sdata %>% filter(gene_name == "FAM3C") %>% as_granges()) %>% 
+  as.data.frame() %>% 
+  mutate(score = log2(score + 1))
+
+cvg_line <- list(
+  data = list(values = example_gene),
+  mark = "line",
+  encoding = list(
+    x = list(field = "start", type = "quantitative", scale = list(zero = FALSE)),
+    x2 = list(field = "end", type = "quantitative"),
+    y = list(field = "score", type = "quantitative"),
+    color = list(field = "Replicate", type = "ordinal"),
+    row = list(field = "Kit", type = "nominal")
+  )
+)
+
+example_anno <- features_exons %>% 
+  filter_by_overlaps(sdata %>% filter(gene_name == "FAM3C") %>% as_granges()) %>% 
+  as.data.frame()
+
 ideogram <- list(
-  `$schema` = vega_schema("vega_lite"),
-  data = list(values = as.data.frame(example_anno)),
+  data = list(values = example_anno),
   mark = "rect",
   encoding = list(
     x = list(field = "start", type = "quantitative", 
-             scale = list(domain = c(min(start(example_anno)), max(end(example_anno))))),
+             scale = list(zero = FALSE)),
     x2 = list(field = "end", type = "quantitative"),
-    y = list(field = "gene_id", type = "ordinal")
+    y = list(field = "gene_id", type = "ordinal", axis = list(labels = FALSE, title = NULL))
   )  
 )
+
+db <- list(`$schema` = vega_schema(), 
+           vconcat = list(cvg_line, ideogram))
 
 ```
 
