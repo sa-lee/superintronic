@@ -197,22 +197,87 @@ Herew we report coverage summary values per gene of:
 	Trimmed mean (remove top and bottom 10%) coverage of exonic regions 
 	Trimmed mean coverage of intronic regions by gene
 
-We also produce a scatter plot over all genes of the trimmed scores for exons
-against introns.
+The trimmed mean is estimated over all samples within gene and the 
+scores are transformed using the log2 function with an offset of 1. 
+From this weproduce a scatter plot over all genes of the trimmed coverage 
+scores for exons against introns. Of interest are the following scenarios:
+
+1. large exon and intron score -> intron retention?
+2. large exon score and low intron score -> pre mRNA? unnanotated exon?
 
 ```{r tm-est}
 tm_cvg <- cvg_features %>% 
   group_by(feature_type, gene_id) %>% 
   summarise(tm_score = mean(log2(score + 1), trim = 0.1))
 
-tm_cvg %>% 
+tm_cvg_wide <- tm_cvg %>% 
   as.data.frame() %>% 
-  tidyr::spread(feature_type, tm_score) %>% 
+  tidyr::spread(feature_type, tm_score) 
+
+tm_cvg_wide %>% 
   ggplot(aes(intron, exon)) + 
   naniar::geom_miss_point(alpha = 0.1) 
 ```
 
+The above plot also displays on the left hand side, the range of exon scores
+where there are no annotated introns (perhaps should filter these above).
 
-Idea: link this plot to coverage browser 
+This plot provides a useful starting point for exploring the data in more detail
+in essence we are interested in looking the coverage profiles for genes in
+the right hand side and upper quadrant of the plot. That is, we want
+the scatter plot to be linked to genome tracks.
+
+```{r}
+
+anno_df <- here::here("data-raw/gencode.v27.annotation.gtf.gz") %>% 
+  read_gff() %>%
+  filter(type == "gene") %>%
+  select(gene_id, gene_type, gene_name) %>% 
+  as.data.frame()
+
+
+sdata <- tm_cvg_wide %>% 
+  filter(!is.na(exon)) %>% 
+  dplyr::left_join(anno_df)
+
+scatter <- list(
+  `$schema` = vega_schema("vega_lite"),
+  data = list(values = sdata),
+  selection = list(
+    "get_gene" = list(type = "single")
+  ),
+  mark = "point",
+  encoding = list(
+    x = list(field = "intron", type = "quantitative"),
+    y = list(field = "exon", type = "quantitative"),
+    color = list(
+      condition = list(
+        selection = "get_gene",
+        value = "black"
+      ),
+      value = "grey"
+    ),
+    tooltip = list(
+      list(field = "seqnames", type = "ordinal"),
+      list(field = "gene_name", type = "ordinal"),
+      list(field = "gene_type", type = "ordinal")
+      )
+  )
+)
+
+
+ideogram <- list(
+  `$schema` = vega_schema("vega_lite"),
+  data = list(values = as.data.frame(example_anno)),
+  mark = "rect",
+  encoding = list(
+    x = list(field = "start", type = "quantitative", 
+             scale = list(domain = c(min(start(example_anno)), max(end(example_anno))))),
+    x2 = list(field = "end", type = "quantitative"),
+    y = list(field = "gene_id", type = "ordinal")
+  )  
+)
+
+```
 
 	
