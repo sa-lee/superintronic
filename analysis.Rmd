@@ -116,11 +116,19 @@ coverage scores over the main chromosomes of the reference.
 # process coverage in parallel
 cvg <- BiocParallel::bplapply(
   bams, 
-  FUN = coverage,
+  FUN = compute_clean_coverage,
   BPPARAM = BiocParallel::MulticoreParam(workers = 6)
-) 
+) %>% 
+  GRangesList()
 
-cvg <- lapply(cvg, function(x) x[seqnames(main_chr)])
+# add some metadata to coverage scores
+mcols <- unmixed %>% 
+  subset(select = c(Sample, Replicate, Kit)) %>% 
+  transform(
+    Sample = as(Sample, "Rle"),
+    Replicate = as(Replicate, "Rle"),
+    Kit = as(Kit, "Rle")
+)
 
 # add some metadata to coverage scores
 md_cvg <- unmixed %>% 
@@ -129,7 +137,14 @@ md_cvg <- unmixed %>%
     Sample = as(Sample, "Rle"),
     Replicate = as(Replicate, "Rle"),
     Kit = as(Kit, "Rle")
-)
+  )
+# go from list to long form
+n_grps <- lengths(cvg)
+cvg <- unlist(cvg, use.names = FALSE)
+mcols(cvg) <- cbind(
+  mcols(cvg),
+  md_cvg[rep.int(seq_len(nrow(unmixed)), n_grps), ]
+  )
 
 ```
 
