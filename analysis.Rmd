@@ -44,6 +44,21 @@ compute_clean_coverage <- function(x) {
   cvg
 }
 
+cvg_over_gene_plot <- function(cvg_features, gene_id) {
+  cvg_features %>% 
+    filter(gene_id == !!gene_id) %>% 
+    ggbio::autoplot(., 
+                    aes(
+                      y = log2(score+1), 
+                      group = Replicate, 
+                      colour = feature_type
+                    ), 
+                    geom = "line") + 
+    facet_grid(Kit ~ .) +
+    scale_color_brewer(pallete = "Dark2") +
+    theme(axis.text.x = element_text(angle = 60, vjust = 60))
+}
+
 ```
 
 
@@ -159,7 +174,8 @@ exon_scores <- lapply(
            make_views(seqnames(features[i]), features$features_exons[i])
          }  
     )
-    
+
+
 
 cvg_views <- 
 
