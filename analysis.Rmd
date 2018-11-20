@@ -37,6 +37,13 @@ flattenMD <- function(x, type = "exon") {
   )
 }
 
+compute_clean_coverage <- function(x) {
+  cvg <- compute_coverage(x) %>%
+    keepStandardChromosomes("Homo sapiens", pruning.mode = "coarse") %>% 
+    set_genome_info(genome = "hg20")
+  cvg
+}
+
 ```
 
 
@@ -71,13 +78,16 @@ bams <- lapply(
   ) %>% 
   BamFileList()
 
-
+# get annotation over main chromosomes
 main_chr <- bams %>% 
   get_genome_info() %>% 
   keepStandardChromosomes("Homo sapiens", pruning.mode = "coarse") %>%
-  set_genome_info(genome = "hg20")
+  set_genome_info(
+    genome = "hg20",
+    is_circular = as.vector(seqnames(.) == "chrM")
+  )
 
-isCircular(main_chr) <- as.logical(seqnames(main_chr) == "chrM")
+
 ```
 
 ## Computing coverage
@@ -87,20 +97,15 @@ in parallel using `BiocParallel` with `plyranges`. We will only keep
 coverage scores over the main chromosomes of the reference.
 
 ```{r bam-coverage, cache = TRUE}
-compute_clean_coverage <- function(x) {
-  cvg <- compute_coverage(x) %>%
-    keepStandardChromosomes("Homo sapiens", pruning.mode = "coarse") %>% 
-    set_genome_info(genome = "hg20")
-  cvg
-}
 
 # process coverage in parallel
 cvg <- BiocParallel::bplapply(
   bams, 
-  FUN = compute_clean_coverage,
+  FUN = coverage,
   BPPARAM = BiocParallel::MulticoreParam(workers = 6)
-  ) %>% 
-  GRangesList()
+) 
+
+cvg <- lapply(cvg, function(x) x[seqnames(main_chr)])
 
 # add some metadata to coverage scores
 md_cvg <- unmixed %>% 
@@ -109,15 +114,8 @@ md_cvg <- unmixed %>%
     Sample = as(Sample, "Rle"),
     Replicate = as(Replicate, "Rle"),
     Kit = as(Kit, "Rle")
-  )
+)
 
-# go from list to long form
-n_grps <- lengths(cvg)
-cvg <- unlist(cvg, use.names = FALSE)
-mcols(cvg) <- cbind(
-  mcols(cvg),
-  md_cvg[rep.int(seq_len(nrow(unmixed)), n_grps), ]
-  )
 ```
 
 ## Processing Annotation File
@@ -125,6 +123,7 @@ mcols(cvg) <- cbind(
 We construct an annotation database from the gencode annotation gtf provided.
 
 ```{r make-features-db, cache =TRUE}
+
 txdb <- makeTxDbFromGFF(
   here::here("data-raw", "gencode.v27.annotation.gtf.gz"),
   chrominfo = seqinfo(main_chr)
@@ -132,7 +131,37 @@ txdb <- makeTxDbFromGFF(
 
 # get genes
 features <- txdb %>%
-  genes()
+  genes() %>% 
+  mutate(
+    n_overlaps_self = count_overlaps(., .),
+    features_exons = txdb %>% 
+      exonsBy("gene") %>% 
+      reduce() %>% 
+      unname(),
+    features_introns = . %setdiff% 
+      features_exons %>% 
+      unname()
+  )
+
+# how many self overlaps
+features %>% 
+  group_by(n_overlaps_self) %>% 
+  summarise(n = n())
+
+# no overlaps, no 1 exon only lists
+one_hits <- features %>% 
+  filter(n_overlaps_self == 1L, lengths(features_exons) > 1)
+
+# compute views lookup in parallel
+exon_scores <- lapply(
+    seq_along(features),
+    FUN = function(i) {
+           make_views(seqnames(features[i]), features$features_exons[i])
+         }  
+    )
+    
+
+cvg_views <- 
 
 # exons for each gene,
 # merge overlapping exons
@@ -150,6 +179,8 @@ as well. We then combine the features together into a single GRanges object.
 
 ```{r features-long-form, cache=TRUE}
 # restore back to flat GRanges 
+# remove only exonic features
+features_exons <- features_exons[lengths(features_exons) > 0]
 md_exons <- flattenMD(features_exons)
 features_exons <- unlist(features_exons, use.names = FALSE) 
 mcols(features_exons) <- md_exons
@@ -205,6 +236,9 @@ scores for exons against introns. Of interest are the following scenarios:
 1. large exon and intron score -> intron retention?
 2. large exon score and low intron score -> pre mRNA? unnanotated exon?
 
+Need to double check for multiple genes over a single score -> artificially
+inflates the coverage. 
+
 ```{r tm-est}
 tm_cvg <- cvg_features %>% 
   group_by(feature_type, gene_id) %>% 
@@ -216,19 +250,17 @@ tm_cvg_wide <- tm_cvg %>%
 
 tm_cvg_wide %>% 
   ggplot(aes(intron, exon)) + 
-  naniar::geom_miss_point(alpha = 0.1) 
+  geom_point(alpha = 0.1)
 ```
 
-The above plot also displays on the left hand side, the range of exon scores
-where there are no annotated introns (perhaps should filter these above).
 
 This plot provides a useful starting point for exploring the data in more detail
 in essence we are interested in looking the coverage profiles for genes in
 the right hand side and upper quadrant of the plot. That is, we want
 the scatter plot to be linked to genome tracks.
 
-```{r}
-
+First, we create the scatter, which is used to perform filtering:
+```{r vw-scatter}
 anno_df <- here::here("data-raw/gencode.v27.annotation.gtf.gz") %>% 
   read_gff() %>%
   filter(type == "gene") %>%
@@ -259,20 +291,28 @@ scatter <- list(
     opacity = list(value = 0.2),
     tooltip = list(
       list(field = "seqnames", type = "ordinal"),
-      list(field = "gene_name", type = "ordinal"),
-      list(field = "gene_type", type = "ordinal")
+      list(field = "gene_id", type = "nominal"),
+      list(field = "gene_name", type = "nominal"),
+      list(field = "gene_type", type = "nominal")
       )
   )
 )
+```
+
+Then we can add in the coverage scores:
 
 
-example_gene <- cvg %>% 
-  filter_by_overlaps(sdata %>% filter(gene_name == "FAM3C") %>% as_granges()) %>% 
-  as.data.frame() %>% 
-  mutate(score = log2(score + 1))
+```{r}
+# add in features
+all_cvg <- cvg_features %>% 
+  mutate(score = log2(score + 1)) %>% 
+  select(seqnames, start, end, score, gene_id, feature_type, Replicate, Kit, 
+         .drop_ranges = TRUE) %>% 
+  tibble::as_tibble()
 
 cvg_line <- list(
-  data = list(values = example_gene),
+  data = list(name = "scores"),
+  transform = list(filter = list()),
   mark = "line",
   encoding = list(
     x = list(field = "start", type = "quantitative", scale = list(zero = FALSE)),
@@ -283,9 +323,10 @@ cvg_line <- list(
   )
 )
 
-example_anno <- features_exons %>% 
-  filter_by_overlaps(sdata %>% filter(gene_name == "FAM3C") %>% as_granges()) %>% 
-  as.data.frame()
+
+```
+
+
 
 ideogram <- list(
   data = list(values = example_anno),
