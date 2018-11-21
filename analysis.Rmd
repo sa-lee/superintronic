@@ -44,8 +44,10 @@ compute_clean_coverage <- function(x) {
   cvg
 }
 
-cvg_over_gene_plot <- function(cvg_features, gene_id) {
-  cvg_features %>% 
+cvg_over_gene_plot <- function(cvg_features, gene_of_interest, txdb) {
+  gene_id <- gene_of_interest$gene_id
+  
+  t1 <- cvg_features %>% 
     filter(gene_id == !!gene_id) %>% 
     ggbio::autoplot(., 
                     aes(
@@ -55,8 +57,12 @@ cvg_over_gene_plot <- function(cvg_features, gene_id) {
                     ), 
                     geom = "line") + 
     facet_grid(Kit ~ .) +
-    scale_color_brewer(pallete = "Dark2") +
-    theme(axis.text.x = element_text(angle = 60, vjust = 60))
+    scale_color_brewer(palette = "Dark2") +
+    theme(axis.text.x = element_text(angle = 60, vjust = 0.5)) +
+    labs(title = mcols(gene_of_interest)[["gene_name"]])
+  #t2 <- ggbio::autoplot(txdb, which = gene_of_interest)
+  #ggbio::tracks(t1, t2)
+  t1
 }
 
 ```
@@ -122,15 +128,6 @@ cvg <- BiocParallel::bplapply(
   GRangesList()
 
 # add some metadata to coverage scores
-mcols <- unmixed %>% 
-  subset(select = c(Sample, Replicate, Kit)) %>% 
-  transform(
-    Sample = as(Sample, "Rle"),
-    Replicate = as(Replicate, "Rle"),
-    Kit = as(Kit, "Rle")
-)
-
-# add some metadata to coverage scores
 md_cvg <- unmixed %>% 
   subset(select = c(Sample, Replicate, Kit)) %>% 
   transform(
@@ -150,74 +147,61 @@ mcols(cvg) <- cbind(
 
 ## Processing Annotation File
 
-We construct an annotation database from the gencode annotation gtf provided.
+We construct an annotation database from the gencode annotation gtf provided,
+and again restrict our features of interest to the standard chromosomes.
 
 ```{r make-features-db, cache =TRUE}
-
 txdb <- makeTxDbFromGFF(
   here::here("data-raw", "gencode.v27.annotation.gtf.gz"),
   chrominfo = seqinfo(main_chr)
 )
+```
 
-# get genes
+Following, the creation of the annotation database, we can extract genes,
+exons (by gene), and introns (by gene). We also compute the number of times
+each gene overlaps another gene. 
+
+```{r features}
+# get genes, and create list columns for introns and exons 
 features <- txdb %>%
   genes() %>% 
   mutate(
-    n_overlaps_self = count_overlaps(., .),
+    n_self_overlaps = count_overlaps(., .),
     features_exons = txdb %>% 
       exonsBy("gene") %>% 
-      reduce() %>% 
-      unname(),
-    features_introns = . %setdiff% 
-      features_exons %>% 
-      unname()
+      reduce(),
+    features_introns = . %setdiff% features_exons
   )
 
 # how many self overlaps
 features %>% 
-  group_by(n_overlaps_self) %>% 
+  group_by(n_self_overlaps) %>% 
   summarise(n = n())
-
-# no overlaps, no 1 exon only lists
-one_hits <- features %>% 
-  filter(n_overlaps_self == 1L, lengths(features_exons) > 1)
-
-# compute views lookup in parallel
-exon_scores <- lapply(
-    seq_along(features),
-    FUN = function(i) {
-           make_views(seqnames(features[i]), features$features_exons[i])
-         }  
-    )
-
-
-
-cvg_views <- 
-
-# exons for each gene,
-# merge overlapping exons
-features_exons <- txdb %>% 
-  exonsBy("gene") %>% 
-  reduce()
-
-# introns for each gene, take the parallel set difference
-features_introns <- features %setdiff% features_exons
 ```
 
-Once we have each list of features, we flatten them back to long form GRanges.
+For the moment we will keep genes that have at least two exons
+
+```{r one-gene}
+# no overlaps, no 1 exon only lists
+one_hits <- features %>% 
+  filter(lengths(features_exons) > 1)
+
+```
+
+Now we flatten the exons and introns list columns them back to long form GRanges.
 We also carry over metadata for each feature, such as total width, strand etc. 
 as well. We then combine the features together into a single GRanges object.
 
 ```{r features-long-form, cache=TRUE}
 # restore back to flat GRanges 
 # remove only exonic features
-features_exons <- features_exons[lengths(features_exons) > 0]
-md_exons <- flattenMD(features_exons)
-features_exons <- unlist(features_exons, use.names = FALSE) 
+md_exons <- flattenMD(one_hits$features_exons)
+features_exons <- unlist(one_hits$features_exons, use.names = FALSE) 
 mcols(features_exons) <- md_exons
 
-md_introns <- flattenMD(features_introns, type = "intron")
-features_introns <- unlist(features_introns, use.names = FALSE)
+md_introns <- flattenMD(one_hits$features_introns, 
+                        type = "intron")
+features_introns <- unlist(one_hits$features_introns, use.names = FALSE)
 mcols(features_introns) <- md_introns
 
 features_combined <- bind_ranges(features_exons, features_introns) %>% 
@@ -228,8 +212,8 @@ features_combined
 
 ## Coverage summaries over features of interest
 
-We use an overlap join, to compute the intersect overlap of the coverage
-ranges with the annotated features of interest. 
+We use an overlap join, to compute the where the coverage vectors intersect
+our exonic and intronic ranges. 
 
 ```{r olap-join-intersect, cache = TRUE}
 cvg_features <- cvg %>% 
@@ -237,10 +221,9 @@ cvg_features <- cvg %>%
 ```
 
 We can now start computing summaries and visualisations 
-over the samples of interest. For example, we can plot per base coverage (0 - 300x) 
-histograms for exon and intron features.
+over the samples of interest. 
 
-```{r cvg-histogram}
+```{r cvg-histogram, include = FALSE, eval = FALSE}
 cvg_hist <- cvg_features %>% 
   group_by(Replicate, Kit, feature_type, score) %>% 
   summarise(n_bases = sum(width)) 
@@ -253,9 +236,7 @@ ggplot(as.data.frame(cvg_hist) %>%
   facet_grid(Kit ~ Replicate)
 ```
 
-Note need to reverse features for neg strand genes etc. 
-
-Herew we report coverage summary values per gene of:
+We report coverage summary values per gene of:
 	Trimmed mean (remove top and bottom 10%) coverage of exonic regions 
 	Trimmed mean coverage of intronic regions by gene
 
@@ -267,8 +248,6 @@ scores for exons against introns. Of interest are the following scenarios:
 1. large exon and intron score -> intron retention?
 2. large exon score and low intron score -> pre mRNA? unnanotated exon?
 
-Need to double check for multiple genes over a single score -> artificially
-inflates the coverage. 
 
 ```{r tm-est}
 tm_cvg <- cvg_features %>% 
@@ -290,13 +269,29 @@ in essence we are interested in looking the coverage profiles for genes in
 the right hand side and upper quadrant of the plot. That is, we want
 the scatter plot to be linked to genome tracks.
 
-First, we create the scatter, which is used to perform filtering:
-```{r vw-scatter}
+But first let's explore some genes of interest - we need to grab the names
+directly from our GTF now, as a `data.frame` and use that as a way of filtering
+results.
+
+```{r cvg_charts}
 anno_df <- here::here("data-raw/gencode.v27.annotation.gtf.gz") %>% 
   read_gff() %>%
   filter(type == "gene") %>%
-  select(gene_id, gene_type, gene_name) %>% 
-  as.data.frame()
+  select(gene_id, gene_type, gene_name)
+
+genes_of_interest <- c("AC104534.1", "HNRNPL", "CPNE1", 
+                       "VCL", "STAG3L5P-PVRIG2P-PILRB", "CD44")
+
+sub_genes <- anno_df %>% 
+  filter(gene_name %in% genes_of_interest)
+
+for (i in seq_along(sub_genes)) {
+  pl <- cvg_over_gene_plot(cvg_features, sub_genes[i])
+  ggsave(filename = here::here("figures", paste0(sub_genes$gene_name[i], ".png")),
+         pl@ggplot,
+         dpi = 320)
+}
+
 
 
 sdata <- tm_cvg_wide %>% 
@@ -353,7 +348,6 @@ cvg_line <- list(
     row = list(field = "Kit", type = "nominal")
   )
 )
-
 
 ```
 
