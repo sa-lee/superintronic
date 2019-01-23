@@ -1,0 +1,16 @@
+Package: detectIR
+Type: Package
+Title: Detect Intron Retention for RNA-seq data
+Version: 0.99.0
+Authors@R: c(
+    person("Stuart", "Lee", email = "lee.s@wehi.edu.au", role = c("aut", "cre")),
+    person("Charity", "Law", email = "law@wehi.edu.au", role = c("aut"))
+    )
+Maintainer: Stuart Lee <lee.s@wehi.edu.au>
+Description: More about what it does (maybe more than one line)
+    Use four spaces when indenting paragraphs within the Description.
+Imports: plyranges, Rsamtools, GenomicFeatures
+Suggests: BiocStyle, knitr, rmarkdown
+License: Artistic-2.0
+Encoding: UTF-8
+RoxygenNote: 6.1.0
