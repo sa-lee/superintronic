@@ -1,6 +1,6 @@
-Package: detectIR
+Package: superintronic
 Type: Package
-Title: Detect Intron Retention for RNA-seq data
+Title: Explore intron signal 
 Version: 0.99.0
 Authors@R: c(
     person("Stuart", "Lee", email = "lee.s@wehi.edu.au", role = c("aut", "cre")),
@@ -13,4 +13,4 @@ Imports: plyranges, Rsamtools, GenomicFeatures
 Suggests: BiocStyle, knitr, rmarkdown
 License: Artistic-2.0
 Encoding: UTF-8
-RoxygenNote: 6.1.0
+RoxygenNote: 6.1.1

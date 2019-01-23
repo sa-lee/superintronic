@@ -13,12 +13,12 @@
 #' 
 filter_rules <- function(.data, ...) {
   rules <- ...length()
-  
-  if (length(rules) == 0L) {
-    filter(.data, 
+  if (rules == 0L) {
+    return(filter(.data, 
            gene_type == "protein_coding", 
-           n_self_olaps == 0L,
-           lengths(simple_exonic) > 1)
+           n_self_olaps == 1L,
+           lengths(simple_exonic) > 1))
   }
+  
   filter(.data, ...)
 }
