@@ -2,24 +2,27 @@
 % Please edit documentation in R/filter.R
 \name{filter_rules}
 \alias{filter_rules}
-\title{Recommended filters for analysis}
+\title{Apply filters to exon/intron annotations}
 \usage{
 filter_rules(.data, ...)
 }
 \arguments{
 \item{.data}{A GRanges object obtained from `prepare_annotation()`}
 
-\item{...}{A set of logical expressions to filter `.data` if 
-no expressions are provided the default rules are applied.}
+\item{...}{A set of logical expressions to pass to `plyranges::filter()`. If
+no expressions are passed then default filters are applied (see filter)}
+}
+\value{
+a GRanges object
 }
 \description{
-Recommended filters for analysis
+Apply filters to exon/intron annotations
 }
 \details{
-This runs the default set of filters before adding coverage
-information, which are:
+If no expressions are passed to `...` then the following
+filters are applied by default:
 
-* Protein coding genes only
-* Does not overlap any other genes
-* Greater than 1 exonic feature
+* Restrict genes to have `gene_type == "protein_coding"`
+* Genes should not overlap any other genes `n_olaps == 1L`
+* Genes should have at least 2 exons `lengths(simple_exonic) > 1`
 }
