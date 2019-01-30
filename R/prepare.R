@@ -9,11 +9,26 @@
 #' union set of all transcripts from the same gene.
 
 
-#' Prepare GTF/GFF file for coverage analysis by
-#' splitting into intron/exon features
-#' 
+#' Prepare GTF/GFF file for coverage analysis
+#'  
 #' @param .data a GRanges object obtained from `rtracklayer::import()` or
 #' `plyranges::read_gff()`.
+#' 
+#' @details This function takes a GFF/GTF file as GRanges object and returns
+#' a GRanges object with number of rows equal to the number of gene 
+#' features contained. The result has  with the following metadata columns:
+#' 
+#' * `gene_id, gene_type, gene_name`: these are kept from the input `.data`
+#' * `simple_exonic`: a GRangesList column containing the exonic regions 
+#' for each gene, obtained from `type == 'exon'` in the GFF/GTF GRanges object.
+#' * `simple_intronic`: a GRangesList column containing the intronic regions
+#' for each gene. This is simply defined as the set difference betweeen
+#' the gene ranges and the exonic ranges.
+#' * `n_olaps`: the integer count of the number times a gene overlaps
+#' any other gene.
+#' 
+#' @return a GRanges object
+#' 
 #' @export
 prepare_annotation <- function(.data) {
   stopifnot(is(.data, "GRanges"))
@@ -35,11 +50,10 @@ prepare_annotation <- function(.data) {
   pc_introns <- pc_genes %setdiff% pc_exons
 
   # add columns
-  md <- S4Vectors::DataFrame(n_self_olaps = count_overlaps(pc_genes, pc_genes),
+  md <- S4Vectors::DataFrame(n_olaps = count_overlaps(pc_genes, pc_genes),
                   simple_exonic = pc_exons,
                   simple_intronic = pc_introns)
   S4Vectors::mcols(pc_genes) <- cbind(S4Vectors::mcols(pc_genes), md)
-  
   
   pc_genes
   

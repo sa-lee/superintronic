@@ -10,6 +10,9 @@ prepare_annotation(.data)
 \item{.data}{a GRanges object obtained from `rtracklayer::import()` or
 `plyranges::read_gff()`.}
 }
+\value{
+a GRanges object
+}
 \description{
 1. Import the GTF file and extract genes and exon features. Retain any relevant annotation
 information.
@@ -18,6 +21,19 @@ information.
 a gene not annotated as an exon.
 4. Report total exon and intron lengths in each gene, where exons are the
 union set of all transcripts from the same gene.
-Prepare GTF/GFF file for coverage analysis by
-splitting into intron/exon features
+Prepare GTF/GFF file for coverage analysis
+}
+\details{
+This function takes a GFF/GTF file as GRanges object and returns
+a GRanges object with number of rows equal to the number of gene 
+features contained. The result has  with the following metadata columns:
+
+* `gene_id, gene_type, gene_name`: these are kept from the input `.data`
+* `simple_exonic`: a GRangesList column containing the exonic regions 
+for each gene, obtained from `type == 'exon'` in the GFF/GTF GRanges object.
+* `simple_intronic`: a GRangesList column containing the intronic regions
+for each gene. This is simply defined as the set difference betweeen
+the gene ranges and the exonic ranges.
+* `n_olaps`: the integer count of the number times a gene overlaps
+any other gene.
 }
