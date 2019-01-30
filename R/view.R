@@ -5,8 +5,7 @@
 #' 
 #' @importFrom ggbio autoplot   
 #' @importFrom ggplot2 scale_color_brewer aes facet_grid labs theme
-#' @importFrom rlang `!!`
-#' 
+#' @export
 plot_cvg_over_gene <- function(x, gene) {
   gene_id <- gene$gene_id
   

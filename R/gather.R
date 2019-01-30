@@ -11,7 +11,13 @@ standardise_reference <- function(x, genome_info) {
 }
 
 #' Generate long-form coverage as coverage
-#' @param bam
+#' @param bams a character vector containing a list of paths to indexed BAM files
+#' @param genome_info a GRanges object containing reference annotation
+#' @param BPARAM a BiocParallel object (default = `bpparam()`)
+#' 
+#' @importFrom BiocParallel bpparam bplapply
+#' @importFrom Rsamtools BamFile BamFileList
+#' @export
 gather_coverage <- function(bams, genome_info, BPARAM = BiocParallel::bpparam()) {
   
   bfl <- lapply(bams,

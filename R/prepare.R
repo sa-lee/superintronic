@@ -14,7 +14,7 @@
 #' 
 #' @param .data a GRanges object obtained from `rtracklayer::import()` or
 #' `plyranges::read_gff()`.
-#' @param ...
+#' @export
 prepare_annotation <- function(.data) {
   stopifnot(is(.data, "GRanges"))
   .data <- mutate(.data, gene_id = as(gene_id, "Rle"))

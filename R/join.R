@@ -11,7 +11,7 @@ flatten <- function(x, type = "exon") {
   )
 }
 
-#' @importFrom S4Vectors `mcols<-`
+#' @importFrom S4Vectors mcols<-
 combine <- function(x) {
   exonic <- x[["simple_exonic"]]
   features_exons <- unlist(exonic, use.names = FALSE) 
@@ -30,7 +30,7 @@ combine <- function(x) {
 #' 
 #' @param cvg a GRanges object from `gather_coverage()`
 #' @param features a GRanges object from `prepare_annotation()`
-
+#' @export
 merge_coverage <- function(cvg, features) {
   f <- combine(features)
   join_overlap_intersect(cvg, f)
