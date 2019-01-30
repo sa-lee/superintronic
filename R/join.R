@@ -3,14 +3,12 @@ flatten <- function(x, type = "exon") {
   type <- match.arg(type, choices =c("exon", "intron"))
   n_features_in_genes <- BiocGenerics::lengths(x)
   gene_id <- S4Vectors::Rle(names(x), n_features_in_genes)
-  print(gene_id)
   feature_type <- S4Vectors::Rle(
     factor(type,levels = c("exon", "intron")), 
     sum(n_features_in_genes)
   )
   feature_rank <- unlist(lapply(n_features_in_genes, seq_len), 
                          use.names = FALSE)
-  print(feature_rank)
   feature_length <- unlist(width(x), use.names = FALSE)
   feature_strand <- unlist(strand(x), use.names = FALSE)
   S4Vectors::DataFrame(

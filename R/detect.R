@@ -24,7 +24,10 @@
 #'
 #' @export
 summarise_ir <- function(x, design, ...) {
-  
+  # on dots
+  # no dots just summarise coverage over gene over type
+  # dots same but grouped by dots, should function actually just
+  # be a wrapper to group by 
   
 }
 

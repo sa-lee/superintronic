@@ -19,7 +19,11 @@ gather_coverage <- function(bams, genome_info = NULL, BPPARAM = BiocParallel::bp
   
   cvg <- GenomicRanges::GRangesList(cvg)
   
+  md <- DataFrame(source =  Rle(names(cvg), lengths(cvg)))
+  
+
   cvg <- unlist(cvg, use.names = FALSE)
+  mcols(cvg) <- md
   
   if (!is.null(genome_info)) {
     return(cvg %>% filter_by_overlaps(genome_info))

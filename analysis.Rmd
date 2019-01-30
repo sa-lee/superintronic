@@ -87,11 +87,8 @@ collect the file paths as a BamFileList. We also reduce the reference
 annotations to main contigs of the genome build.
 
 ```{r unmixed-bams}
-unmixed <- tbl %>% 
-  subset(Replicate %in% c("R1", "R2", "R3") & Mixture == 0) %>% 
-  transform(Sample = paste0(Replicate, "_", "HCC287"),
-            CellLine = "HCC287")
-unmixed
+
+
 
 bams <- lapply(
   unmixed$File, 
@@ -150,7 +147,7 @@ mcols(cvg) <- cbind(
 We construct an annotation database from the gencode annotation gtf provided,
 and again restrict our features of interest to the standard chromosomes.
 
-```{r make-features-db, cache =TRUE}
+```{r make-features-db, cache =TRUE, dependson=main_chr}
 txdb <- makeTxDbFromGFF(
   here::here("data-raw", "gencode.v27.annotation.gtf.gz"),
   chrominfo = seqinfo(main_chr)

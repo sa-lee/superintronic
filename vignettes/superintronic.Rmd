@@ -1,0 +1,78 @@
+---
+title: "Exploring intron signal with superintronic"
+author: "Stuart Lee, Charity Law"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+                      fig.align = "center",
+                      comment = "#>", 
+                      message = FALSE,
+                      warning = FALSE
+                      )
+library(superintronic)
+```
+
+## Preparing GFF/GTF files
+
+```{r}
+gff <- here::here("data-raw", "gencode.v27.annotation.gtf.gz")
+ref <- BSgenome.Hsapiens.UCSC.hg38::BSgenome.Hsapiens.UCSC.hg38 %>% 
+  get_genome_info() %>% 
+  keepStandardChromosomes("Homo sapiens", "coarse")
+
+gr_gff <- read_gff(gff, genome_info = ref )
+anno <- prepare_annotation(gr_gff)
+anno 
+```
+
+Once the annotation has been supplied you can explore various aspects,
+```{r}
+anno %>% 
+  group_by(n_self_olaps) %>% 
+  summarise(n = n())
+```
+
+and given a set of rules, filter the annotation (by default we include
+protein coding, genes with more than one exon, genes that do not overlap
+any other genes)
+
+```{r}
+anno_sub <- anno %>% 
+  filter_rules()
+```
+
+
+## Preparing BAM files
+
+Generate a design data.frame containing filenames, and other variables.
+
+```{r}
+tbl <- read.table(
+  here::here("data-raw", "targets.txt"),
+  header = TRUE,
+  stringsAsFactors = FALSE
+  ) %>% 
+  transform(File = sub("\\.", "-", File)) %>%
+  as("DataFrame")
+
+design <- tbl %>% 
+  subset(Replicate %in% c("R1", "R2", "R3") & Mixture == 0) %>% 
+  transform(Sample = paste0(Replicate, "_", "HCC287"),
+            CellLine = "HCC287")
+design
+```
+
+
+Now we can take our BAM files and compute coverage over them
+
+```{r}
+cvg <- gather_coverage(here::here("data-raw", design$File),
+                       genome_info = ref)
+```
