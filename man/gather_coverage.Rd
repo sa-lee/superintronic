@@ -2,17 +2,30 @@
 % Please edit documentation in R/gather.R
 \name{gather_coverage}
 \alias{gather_coverage}
-\title{Generate long-form coverage as coverage}
+\title{Compute long-form coverage}
 \usage{
-gather_coverage(bams, genome_info, BPARAM = BiocParallel::bpparam())
+gather_coverage(bams, genome_info = NULL,
+  BPPARAM = BiocParallel::bpparam())
 }
 \arguments{
-\item{bams}{a character vector containing a list of paths to indexed BAM files}
+\item{bams}{a character vector containing a paths to indexed BAM files}
 
-\item{genome_info}{a GRanges object containing reference annotation}
+\item{genome_info}{a GRanges object containing reference annotation (default = NULL)}
 
-\item{BPARAM}{a BiocParallel object (default = `bpparam()`)}
+\item{BPPARAM}{a BiocParallel object (default = `BiocParallel::bpparam()`)}
+}
+\value{
+a GRanges object
 }
 \description{
-Generate long-form coverage as coverage
+Compute long-form coverage
+}
+\details{
+This function computes coverage as a GRanges object, with
+a `source` column containing the name of the input BAM file, and a
+`score` column containing the coverage score. The `genome_info` argument
+takes a GRanges object containing contig/chromosome information. If
+supplied coverage will be computed only over those contigs, and the
+annotation information will be set on the resulting GRanges to that availble
+in `genome_info`.
 }
