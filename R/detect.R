@@ -1,9 +1,8 @@
 #' Intron Signal Aggregator
 #'
 #'
-#' @param x a GRanges object from `merge_coverage()`
-#' @param design a DataFrame containing a primary key to join to `x`
-#' @param ... columns names to partiton x over
+#' @param x a GRanges object from `merge_coverage()\merge_design()`
+#' @param ... columns to partition x 
 #'
 #' @details
 #'
@@ -23,16 +22,20 @@
 #'
 #'
 #' @export
-summarise_ir <- function(x, design, ...) {
+summarise_ir <- function(x, ...) {
   # on dots
   # no dots just summarise coverage over gene over type
   # dots same but grouped by dots, should function actually just
   # be a wrapper to group by 
+  dots <- rlang::enquos(...)
+  
   
 }
 
 
 
-weighted_coverage <- function(score, width) sum(score*width) / sum(width)
 
-trimmed_coverage <- function() NULL
+
+
+mean_coverage <- function(score, width) sum(score*width) / sum(width)
+
