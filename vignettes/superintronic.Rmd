@@ -21,7 +21,7 @@ library(superintronic)
 
 ## Preparing GFF/GTF files
 
-```{r}
+```{r gff}
 gff <- here::here("data-raw", "gencode.v27.annotation.gtf.gz")
 ref <- BSgenome.Hsapiens.UCSC.hg38::BSgenome.Hsapiens.UCSC.hg38 %>% 
   get_genome_info() %>% 
@@ -33,7 +33,7 @@ anno
 ```
 
 Once the annotation has been supplied you can explore various aspects,
-```{r}
+```{r anno-summary}
 anno %>% 
   group_by(n_self_olaps) %>% 
   summarise(n = n())
@@ -53,7 +53,7 @@ anno_sub <- anno %>%
 
 Generate a design data.frame containing filenames, and other variables.
 
-```{r}
+```{r prepare-design}
 tbl <- read.table(
   here::here("data-raw", "targets.txt"),
   header = TRUE,
@@ -70,9 +70,31 @@ design
 ```
 
 
-Now we can take our BAM files and compute coverage over them
+Now we can take our BAM files and compute coverage. This
+produces a large GRanges object, with two metadata columns,
+`source` which is the BAM file  that coverage was computed for, and `score`
+which is the coverage score. By default, this function computes
+the coverage scores in parallel using BiocParallel.
 
-```{r}
+An optional GRanges object may be passed to this function that will 
+restrict the coverage computation to those regions; and set the annotation
+in the resulting GRanges object. 
+
+```{r compute-coverage}
 cvg <- gather_coverage(here::here("data-raw", design$File),
                        genome_info = ref)
+```
+
+## Coverage over intronic/exonic regions
+
+Now all the ingredients are in place to merge the coverage scores
+to our prepared annotation with `merge_coverage()`. This again
+returns a GRanges object, restricted to the intersection of the 
+coverage ranges with intron/exon ranges. Additional columns are added
+corresponding to the properties of the intron/exon.
+
+```{r}
+cvg_over_features <- merge_coverage(cvg, anno_sub)
+
+cvg_over_features
 ```

@@ -31,10 +31,24 @@ combine_exin <- function(x) {
 }
 
 
-#' Coverage over features
+#' Restrict coverage over features
+#' 
 #' 
 #' @param cvg a GRanges object from `gather_coverage()`
 #' @param features a GRanges object from `prepare_annotation()`
+#' 
+#' @details This function restricts the coverage GRanges, `cvg` to the ranges
+#' that intersect the `simple_exonic` and `simple_intronic` ranges, the result
+#' is a GRanges object with additional columns: 
+#' 
+#' * `gene_id`, the gene_id from `features` corresponding to an exon/intron.
+#' * `feature_type`, whether the range corresponds to an exon or intro feature.
+#' * `feature_rank`, the rank of the exon/intron feature within a gene.
+#' * `feature_length`, the width of the exon/intron
+#' * `feature_strand`, the strand of the exon/intron
+#' 
+#' @return a GRanges object
+#' 
 #' @export
 merge_coverage <- function(cvg, features) {
   f <- combine_exin(features)

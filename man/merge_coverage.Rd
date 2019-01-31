@@ -2,7 +2,7 @@
 % Please edit documentation in R/join.R
 \name{merge_coverage}
 \alias{merge_coverage}
-\title{Coverage over features}
+\title{Restrict coverage over features}
 \usage{
 merge_coverage(cvg, features)
 }
@@ -11,6 +11,20 @@ merge_coverage(cvg, features)
 
 \item{features}{a GRanges object from `prepare_annotation()`}
 }
+\value{
+a GRanges object
+}
 \description{
-Coverage over features
+Restrict coverage over features
+}
+\details{
+This function restricts the coverage GRanges, `cvg` to the ranges
+that intersect the `simple_exonic` and `simple_intronic` ranges, the result
+is a GRanges object with additional columns: 
+
+* `gene_id`, the gene_id from `features` corresponding to an exon/intron.
+* `feature_type`, whether the range corresponds to an exon or intro feature.
+* `feature_rank`, the rank of the exon/intron feature within a gene.
+* `feature_length`, the width of the exon/intron
+* `feature_strand`, the strand of the exon/intron
 }

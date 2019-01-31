@@ -103,7 +103,7 @@ main_chr <- bams %>%
   set_genome_info(
     genome = "hg20",
     is_circular = as.vector(seqnames(.) == "chrM")
-  )
+)
 
 
 ```
