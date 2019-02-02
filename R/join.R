@@ -57,11 +57,36 @@ merge_coverage <- function(cvg, features) {
 
 
 merge_design <- function(cvg, design, to = NULL) {
+  # this is an inner join
+  # for some reason though merge is really slow
+  # so have gone for a kludgy match approach
+  stopifnot(any(names(mcols(cvg)) %in% "source"))
+  if (is.null(to)) {
+    to <- "source"
+  }
+  stopifnot(any(names(design) %in% to))
   
-  inx <- match(mcols(cvg)[["source"]], 
-               mcols(design)[[to]],
-               nomatch = NA_integer_)
-  inx
+  diff <- BiocGenerics::setdiff(
+    S4Vectors::runValue(mcols(cvg)[["source"]]),
+    design[[to]]
+  )
+  if (length(diff) > 0) {
+    cvg <- plyranges::filter(cvg, !(source %in% !!diff))
+  }
+  
+  cvg <- cvg[BiocGenerics::order(mcols(cvg)[["source"]]), ]
+
+  nr <- seq_len(S4Vectors::nrun(mcols(cvg)[["source"]]))
+  rl <- S4Vectors::runLength(mcols(cvg)[["source"]])
+
+  design <- design[BiocGenerics::order(design[[to]]), -c(to)]
+  design <- design[BiocGenerics::rep.int(nr, rl), ]
+  
+  mcols(cvg) <- cbind(
+    mcols(cvg),
+    design
+  )
+  cvg
 }
 
 
