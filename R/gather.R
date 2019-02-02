@@ -47,10 +47,11 @@ gather_coverage <- function(bams, genome_info = NULL, BPPARAM = BiocParallel::bp
     seqinfo(cvg) <- seqinfo(genome_info)
   }
   
-  md <- S4Vectors::DataFrame(source =  Rle(names(cvg), lengths(cvg)))
-  
+  md <- S4Vectors::DataFrame(source = 
+                               S4Vectors::Rle(names(cvg), 
+                                              BiocGenerics::lengths(cvg))
+                             )
   cvg <- unlist(cvg, use.names = FALSE)
   mcols(cvg) <- cbind(md, mcols(cvg))
-  
   cvg
 }
