@@ -22,13 +22,25 @@
 #'
 #'
 #' @export
-summarise_ir <- function(x, ...) {
+summarise_intronic <- function(x, ...) {
   # on dots
-  # no dots just summarise coverage over gene over type
-  # dots same but grouped by dots, should function actually just
-  # be a wrapper to group by 
   dots <- rlang::enquos(...)
   
+  # no dots just summarise coverage as follows
+  # coverage over each exon/intron in a gene
+  # this is computed as weighted sum 
+  if (length(dots) == 0L) {
+    x %>% 
+      plyranges::group_by(gene_id, feature_type, feature_strand) %>% 
+      plyranges::reduce_ranges(
+        score = mean(score),
+        log_score = mean(log2(score + 1L)),
+        
+        a = mean_coverage(score*width) / sum(width)
+        
+      )
+  }
+  # dots same but add partitions
   
 }
 
@@ -36,6 +48,6 @@ summarise_ir <- function(x, ...) {
 
 
 
-
+# helper fun for width 
 mean_coverage <- function(score, width) sum(score*width) / sum(width)
 

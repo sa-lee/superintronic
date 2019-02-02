@@ -45,6 +45,7 @@ combine_exin <- function(x) {
 #' * `feature_type`, whether the range corresponds to an exon or intro feature.
 #' * `feature_rank`, the rank of the exon/intron feature within a gene.
 #' * `feature_length`, the width of the exon/intron
+#' * `feature_prop_covered`, the proportion of bases that overlap a feature
 #' * `feature_strand`, the strand of the exon/intron
 #' 
 #' @return a GRanges object
@@ -52,7 +53,10 @@ combine_exin <- function(x) {
 #' @export
 merge_coverage <- function(cvg, features) {
   f <- combine_exin(features)
-  join_overlap_intersect(cvg, f)
+  join_overlap_intersect(cvg, f) %>% 
+    mutate(
+      feature_prop_covered = width / feature_length
+    )
 }
 
 
