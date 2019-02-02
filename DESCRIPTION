@@ -1,14 +1,17 @@
 Package: superintronic
 Type: Package
-Title: Explore intron signal 
+Title: Explore intron signal via coverage estimation in high-throughput data.
 Version: 0.99.0
 Authors@R: c(
     person("Stuart", "Lee", email = "lee.s@wehi.edu.au", role = c("aut", "cre")),
     person("Charity", "Law", email = "law@wehi.edu.au", role = c("aut"))
     )
 Maintainer: Stuart Lee <lee.s@wehi.edu.au>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
+Description: 
+    superintronic stimates coverage over intronic/exonic regions within
+    genes given an annotation and an experimental design. It allows the 
+    user to quickly summarise any intron signal, and visualise the
+    coverage regions with their gnee context. 
 Imports: plyranges, Rsamtools, GenomicFeatures, ggbio, ggplot2
 Suggests: BiocStyle, knitr, rmarkdown
 License: Artistic-2.0

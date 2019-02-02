@@ -25,7 +25,7 @@ library(superintronic)
 gff <- here::here("data-raw", "gencode.v27.annotation.gtf.gz")
 ref <- BSgenome.Hsapiens.UCSC.hg38::BSgenome.Hsapiens.UCSC.hg38 %>% 
   get_genome_info() %>% 
-  keepStandardChromosomes("Homo sapiens", "coarse")
+  GenomeInfoDb::keepStandardChromosomes("Homo sapiens", "coarse")
 
 gr_gff <- read_gff(gff, genome_info = ref )
 anno <- prepare_annotation(gr_gff)
@@ -35,7 +35,7 @@ anno
 Once the annotation has been supplied you can explore various aspects,
 ```{r anno-summary}
 anno %>% 
-  group_by(n_self_olaps) %>% 
+  group_by(n_olaps) %>% 
   summarise(n = n())
 ```
 
@@ -46,6 +46,8 @@ any other genes)
 ```{r}
 anno_sub <- anno %>% 
   filter_rules()
+
+anno_sub
 ```
 
 
