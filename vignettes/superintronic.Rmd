@@ -16,7 +16,6 @@ knitr::opts_chunk$set(
                       message = FALSE,
                       warning = FALSE
                       )
-library(superintronic)
 ```
 
 ## Preparing GFF/GTF files
@@ -61,12 +60,12 @@ tbl <- read.table(
   header = TRUE,
   stringsAsFactors = FALSE
   ) %>% 
-  transform(File = sub("\\.", "-", File)) %>%
-  as("DataFrame")
+  transform(File = S4Vectors::Rle(sub("\\.", "-", File))) %>%
+  S4Vectors::DataFrame()
 
 design <- tbl %>% 
-  subset(Replicate %in% c("R1", "R2", "R3") & Mixture == 0) %>% 
-  transform(Sample = paste0(Replicate, "_", "HCC287"),
+  BiocGenerics::subset(Replicate %in% c("R1", "R2", "R3") & Mixture == 0) %>%  
+  S4Vectors::transform(Sample = paste0(Replicate, "_", "HCC287"),
             CellLine = "HCC287")
 design
 ```
@@ -83,7 +82,7 @@ restrict the coverage computation to those regions; and set the annotation
 in the resulting GRanges object. 
 
 ```{r compute-coverage}
-cvg <- gather_coverage(here::here("data-raw", design$File),
+cvg <- gather_coverage(here::here("data-raw", design$File[1]),
                        genome_info = ref)
 ```
 
@@ -102,3 +101,8 @@ cvg_over_features
 ```
 
 
+
+```{r}
+
+
+```
