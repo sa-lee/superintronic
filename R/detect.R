@@ -22,10 +22,16 @@
 #'
 #'
 #' @export
-summarise_intronic <- function(x, ...) {
+summarise_intronic <- function(x, ..., threshold = 0L) {
   # on dots
   dots <- rlang::enquos(...)
   
+  default_cols <- 
+    rlang::quos(
+      total_coverage = sum(score * width),
+      average_coverage = mean_coverage(score, width),
+      n_bases_above_threshold = sum(width[score > !!threshold])
+    )
   # no dots just summarise coverage as follows
   # coverage over each exon/intron in a gene
   # this is computed as weighted sum 
@@ -33,10 +39,8 @@ summarise_intronic <- function(x, ...) {
     x %>% 
       plyranges::group_by(gene_id, feature_type, feature_strand) %>% 
       plyranges::reduce_ranges(
-        score = mean(score),
-        log_score = mean(log2(score + 1L)),
+        average_coverage = mean_coverage(score, width),
         
-        a = mean_coverage(score*width) / sum(width)
         
       )
   }
