@@ -53,10 +53,7 @@ combine_exin <- function(x) {
 #' @export
 merge_coverage <- function(cvg, features) {
   f <- combine_exin(features)
-  join_overlap_intersect(cvg, f) %>% 
-    mutate(
-      feature_prop_covered = width / feature_length
-    )
+  join_overlap_intersect(cvg, f)
 }
 
 
