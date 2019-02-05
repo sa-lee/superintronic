@@ -66,11 +66,15 @@ spread_coverage <- function(x, ..., threshold  = 0L) {
     plyranges::group_by(!!!groups) %>% 
     plyranges::summarise(
       !!!cols
+    ) %>% 
+    S4Vectors::transform(
+      prop_bases_covered_at_threshold = n_bases_above_threshold / total_coverage
     )
   
   # spread on feature_type
   res <- S4Vectors::split(res, res[["feature_type"]])
-  values <- BiocGenerics::do.call(S4Vectors::cbind, res[, names(cols)])
+  values <- BiocGenerics::do.call(S4Vectors::cbind, 
+                                  res[, c(names(cols), "prop_bases_covered_at_threshold")])
   keys <- res[, sapply(groups, rlang::quo_name)][[1]]
   S4Vectors::cbind(keys, values)
 }
@@ -89,15 +93,15 @@ set_grouping <- function(...) {
 }
 
 # weighted coverage computation 
-mßean_coverage <- function(score, width) sum(score*width) / sum(width)
+mean_coverage <- function(score, width) sum(score*width) / sum(width)
 
 # default columns to compute in summary calculations
 .signal_cols <- function(threshold = 0L) {
   rlang::quos(
-    feature_length = sum(width),
+    feature_length = sum(unique(feature_length)),
     total_coverage = sum(score * width),
     average_coverage = mean_coverage(score, width),
-    n_bases_above_threshold = sum(width[score > !!threshold])
+    n_bases_above_threshold = sum(width[score > !!threshold]), 
   )
 }
 

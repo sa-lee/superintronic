@@ -24,6 +24,7 @@ exon / intron:
 * `total_coverage`
 * `average_coverage`
 * `n_bases_above_threshold`
+* `prop_bases_covered_at_threshold`
 }
 \description{
 Squish coverage over intronic/exonic parts

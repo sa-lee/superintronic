@@ -82,7 +82,7 @@ restrict the coverage computation to those regions; and set the annotation
 in the resulting GRanges object. 
 
 ```{r compute-coverage}
-cvg <- gather_coverage(here::here("data-raw", design$File[1]),
+cvg <- gather_coverage(here::here("data-raw", design$File),
                        genome_info = ref)
 ```
 
@@ -101,8 +101,18 @@ cvg_over_features
 ```
 
 
+Now we can begin summarising, here we spread the coverage table into wide
+form by aggregating exon/intron coverage over each gene over all samples.
+We can also add a thresholding argument to compute the number of bases 
+above some score threshold and the proportion of bases above that threshold
+that cover the total length of an exon/intron within a gene.
 
 ```{r}
 
+exin_by_gene <- spread_coverage(
+  cvg_over_features,
+  threshold = 10L
+)
 
+exin_by_gene
 ```
