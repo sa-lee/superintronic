@@ -114,5 +114,28 @@ exin_by_gene <- spread_coverage(
   threshold = 10L
 )
 
-exin_by_gene
+view_exin(exin_by_gene,
+          x = intron.average_coverage,
+          y = exon.average_coverage)
+
+```
+
+
+Now let's look at coverage plots for genes on the RHS of the scatter:
+
+```{r}
+high_intronic <- exin_by_gene %>% 
+  subset(intron.average_coverage > 50) %>% 
+  .$gene_id %>% 
+  S4Vectors::runValue()
+
+
+
+for (gene in high_intronic) {
+  p <- anno_sub %>% 
+    filter(gene_id == !!gene) %>% 
+    view_coverage_within_gene(cvg_over_features, .)
+  print(p)
+}
+
 ```
