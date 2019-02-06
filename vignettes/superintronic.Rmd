@@ -114,9 +114,11 @@ exin_by_gene <- spread_coverage(
   threshold = 10L
 )
 
+
+
 view_exin(exin_by_gene,
           x = intron.average_coverage,
-          y = exon.average_coverage)
+          y = intron.n_bases_above_threshold)
 
 ```
 
