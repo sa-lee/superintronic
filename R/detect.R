@@ -1,7 +1,7 @@
 #' Squish coverage over intronic/exonic parts
 #'
 #'
-#' @param x a GRanges object from `merge_coverage()\merge_design()`
+#' @param x a GRanges object from `merge_coverage()` and or `merge_design()`
 #' @param ... columns to partition x 
 #' @param threshold Filter bases covered to above some integer threshold (default = 0L).
 #'

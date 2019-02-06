@@ -7,7 +7,7 @@
 spread_coverage(x, ..., threshold = 0L)
 }
 \arguments{
-\item{x}{a GRanges object from `merge_coverage()\merge_design()`}
+\item{x}{a GRanges object from `merge_coverage()` and or `merge_design()`}
 
 \item{...}{columns to partition x}
 
