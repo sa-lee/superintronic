@@ -3,7 +3,7 @@
 #' @param cvg a GRanges object obtained from `merge_coverage()`
 #' @param target a GRanges object from `prepare_annotation()` containing a gene_id column
 #' 
-#' @importFrom ggplot2 scale_color_brewer aes facet_grid labs theme geom_segment geom_rect scale_x_reverse 
+#' @importFrom ggplot2 scale_color_brewer aes facet_grid labs theme geom_segment geom_rect scale_x_reverse element_blank
 #' @export
 view_coverage_within_gene <- function(cvg, target, facets = ggplot2::vars()) {
   
@@ -22,7 +22,11 @@ view_coverage_within_gene <- function(cvg, target, facets = ggplot2::vars()) {
     ggplot2::geom_segment(data = annotation %>%
                             filter(feature == "intron") %>% 
                             as.data.frame(),
-                          aes(x = start, xend = end, y = 0.5, yend = 0.5))
+                          aes(x = start, xend = end, y = 0.5, yend = 0.5)) +
+    theme(axis.title.x = element_blank(),
+          axis.title.y = element_blank(),
+          axis.ticks.y = element_blank(),
+          axis.text.y = element_blank())
   
 
   
@@ -48,6 +52,9 @@ view_coverage_within_gene <- function(cvg, target, facets = ggplot2::vars()) {
   cvg_hist <- ggplot2::ggplot(as.data.frame(coverage_view),
                      ggplot2::aes(x = midpoint, y= score)) + 
     ggplot2::geom_area() +
+    theme(axis.title.x = element_blank(),
+          axis.ticks.x = element_blank(),
+          axis.text.x = element_blank()) +
     labs(title = paste("Coverage profile:", target$gene_name))
   
   if (S4Vectors::runValue(BiocGenerics::strand(coverage_view)) == "-") {
@@ -59,7 +66,7 @@ view_coverage_within_gene <- function(cvg, target, facets = ggplot2::vars()) {
     cvg_hist <- cvg_hist + facet_wrap(facets)
   }
   
-  patchwork::wrap_plots(cvg_hist, annotation_tracks, nrow = 2L)
+  patchwork::wrap_plots(cvg_hist, annotation_tracks, nrow = 2L, heights = c(4,1))
   
 }
 
