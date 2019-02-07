@@ -3,13 +3,22 @@
 
 # superintronic
 
-Explore intron signal in high-throughput (RNA) sequencing data.
+Explore intron signal in high-throughput (RNA) sequencing data via
+coverage estimation.
 
-The interface is built on top of `plyranges` and is built around the
-GRanges object.
+*superintronic* centers around exploring coverage over exonic and
+intronic regions via computing simple summary statistics and
+visualisations. The aim is to provide an extremely modular worklfow via
+an interface built on top of the
+[*plyranges*](https://sa-lee.github.io/plyranges/index.html) package.
+This means that you can modify any of the steps provided with the
+*plyranges* grammar or just use our defaults.
 
-The basic workflow centers around exploring coverage over exons and
-intron regions.
+The basic workflow consists of three steps
+
+1.  Setting up annotations
+2.  Computing coverage
+3.  Visualising coverage results
 
 ## Setting up annotation GRanges
 
@@ -38,23 +47,57 @@ features <- gff %>%
 ## Computing coverage over BAM(s)
 
 Here we computer a GRanges containing coverage scores in parallel over a
-set of BAM files. The (optional) parallel computation is done with
+set of BAM files. The parallel computation is achieved with
 `BiocParallel`. The result is a long GRanges containing columns called
-`score` and `file`.
+`score` and `source`. An optional GRanges may be passed to this function
+to restrict coverage to compute over selected contigs/chromosomes.
 
 ``` r
 bams <- dir(pattern = "*.bam")
-cvg <- gather_coverage(bams, BPARAM = BiocParallel::bpparam(...))
+cvg <- gather_coverage(bams)
 ```
+
+The coverage scores are then restricted by merging the filtered features
+
+``` r
+# maybe better name would be restrict_coverage
+cvg_over_features <- merge_coverage(cvg, features)
+```
+
+Experimental design variables can be then added with
+
+``` r
+cvg_over_features <- merge_design(cvg_over_features, design)
+```
+
+This requires an additional `data.frame` that contains a column that
+matches the BAM file input.
 
 ## Summarising Overlaps
 
-Then we can summarise the coverage scores that overlap our exon/introns
-for each sample via `summarise_coverage(features, cvg)`, where we get
-average exon coverage score, average exon score, number of bases above
-some coverage threshold.
+There are two modes of summarisation that aggregate over the union set
+of introns/exons (called `spread_coverage()`) or over each individual
+intron/exon within a gene (called `squish_coverage()`). Both of these
+functions are able to compute over variables in experimental design or
+within samples.
+
+``` r
+# over all samples
+spread_coverage(cvg_over_features)
+# within each BAM file
+spread_coverage(cvg_over_features, source)
+# within a design variable
+spread_coverage(cvg_over_features, var)
+
+# over all samples
+squish_coverage(cvg_over_features)
+# within each BAM file
+squish_coverage(cvg_over_features, source)
+# within a design variable
+squish_coverage(cvg_over_features, var)
+```
 
 ## Visualising coverage scores
 
-After identifying some gene of interest - you can visualise the results
-per gene via `plot_gene_coverage()`
+The output of `spread_coverage()` can be visualised with `view_exin()`
+and coverage plots over genes with `view_coverage_within_gene()`.
