@@ -3,6 +3,8 @@
 
 # superintronic
 
+[![lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
+
 Explore intron signal in high-throughput (RNA) sequencing data via
 coverage estimation.
 
