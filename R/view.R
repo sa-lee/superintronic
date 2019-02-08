@@ -63,10 +63,13 @@ view_coverage_within_gene <- function(cvg, target, facets = ggplot2::vars()) {
   }
   
   if (length(facets) > 0L) {
-    cvg_hist <- cvg_hist + facet_wrap(facets)
+    cvg_hist <- cvg_hist + facet_wrap(facets, ncol = 1L)
   }
   
-  patchwork::wrap_plots(cvg_hist, annotation_tracks, nrow = 2L, heights = c(4,1))
+  patchwork::wrap_plots(cvg_hist, 
+                        annotation_tracks, 
+                        nrow = 2L, 
+                        heights = c(4,1))
   
 }
 
