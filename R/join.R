@@ -78,8 +78,10 @@ merge_design <- function(cvg, design, on = NULL) {
   if (is.null(on)) {
     on <- "source"
   }
-  stopifnot(any(names(design) %in% on))
-  stopifnot(is(design, "data.frame"))
+  
+  join_col <- names(design) %in% on
+  stopifnot(any(join_col))
+  stopifnot(is(design, "data.frame") | is(design, "DataFrame"))
   
   diff <- BiocGenerics::setdiff(
     S4Vectors::runValue(mcols(cvg)[["source"]]),
@@ -94,7 +96,10 @@ merge_design <- function(cvg, design, on = NULL) {
   nr <- seq_len(S4Vectors::nrun(mcols(cvg)[["source"]]))
   rl <- S4Vectors::runLength(mcols(cvg)[["source"]])
 
-  design <- design[BiocGenerics::order(design[[on]]), -c(on)]
+  design <- design[BiocGenerics::order(design[[on]]), 
+                   !join_col,
+                   drop = FALSE]
+  
   design <- design[BiocGenerics::rep.int(nr, rl), ]
   
   mcols(cvg) <- cbind(
