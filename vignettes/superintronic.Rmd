@@ -100,6 +100,16 @@ cvg_over_features <- merge_coverage(cvg, anno_sub)
 cvg_over_features
 ```
 
+We can also add in elements of the experimental design by joining the design
+table to the coverage ranges:
+
+```{r}
+
+cvg_over_features <- merge_design(cvg_over_features,
+                                  design,
+                                  on = "File")
+```
+
 
 Now we can begin summarising, here we spread the coverage table into wide
 form by aggregating exon/intron coverage over each gene over all samples.
@@ -109,35 +119,114 @@ that cover the total length of an exon/intron within a gene.
 
 ```{r}
 
-exin_by_gene <- spread_coverage(
+exin_by_kit <- spread_coverage(
   cvg_over_features,
-  threshold = 10L
+  Kit,
+  threshold = 50L
 )
 
+view_exin(exin_by_kit,
+          x = log2(exon.average_coverage + 1),
+          y = log2(intron.average_coverage + 1),
+          facets = "Kit"
+          ) 
 
+view_exin(exin_by_kit,
+          x = log2(exon.average_coverage + 1),
+          y = log2(intron.n_bases_above_threshold + 1)  ,
+          facets = "Kit"
+          ) 
 
-view_exin(exin_by_gene,
-          x = intron.average_coverage,
-          y = intron.n_bases_above_threshold)
 
 ```
 
 
-Now let's look at coverage plots for genes on the RHS of the scatter:
+Now let's look at coverage plots for genes we designate as 'interesting'.
+
+First we look at genes that have a large number of intron bases covered
+above a score of 50 and an log2 average exon coverage above 5. 
 
 ```{r}
-high_intronic <- exin_by_gene %>% 
-  subset(intron.average_coverage > 50) %>% 
+ir_genes <- subset(exin_by_kit, 
+                   (log2(intron.n_bases_above_threshold + 1) > 10 & log2(exon.average_coverage + 1) > 5),
+                   select = "gene_id"
+                   ) %>% 
+  unique() %>% 
+  .$gene_id %>% 
+  S4Vectors::runValue()
+```  
+
+This produces `r length(ir_genes)` candidates for intron retention. We can 
+look at their coverage profiles as follows:
+
+```{r, eval = FALSE}
+for (gene in ir_genes) {
+  fname <- here::here("figures", paste0(gene, "ir.cov.png"))
+  if (file.exists(fname)) break
+  p <- anno_sub %>% 
+    filter(gene_id == !!gene) %>% 
+    view_coverage_within_gene(cvg_over_features, ., "Kit")
+  ggplot2::ggsave(fname, p)
+}
+```
+
+
+Next we select genes that have both high exon and intron coverage and plot
+their coverage profiles:
+
+```{r}
+high_intron_exon <-  subset(exin_by_kit, 
+                   (log2(exon.average_coverage + 1) > 7  & log2(intron.average_coverage) > 5 ),
+                   select = "gene_id"
+                   ) %>% 
+  unique() %>% 
   .$gene_id %>% 
   S4Vectors::runValue()
 
+n_hie <- length(high_intron_exon)
 
+high_intron_exon <- setdiff(high_intron_exon, ir_genes)
+```
 
-for (gene in high_intronic) {
+Of the `r n_hie - length(high_intron_exon)` genes not classified as intron retention , 
+there were `r length(high_intron_exon)` genes that met this criteria. 
+
+```{r, eval = FALSE}
+for (gene in high_intron_exon) {
+  fname <- here::here("figures", paste0(gene, "high.cov.png"))
+  if (file.exists(fname)) break
   p <- anno_sub %>% 
     filter(gene_id == !!gene) %>% 
-    view_coverage_within_gene(cvg_over_features, .)
-  print(p)
+    view_coverage_within_gene(cvg_over_features, ., "Kit")
+  ggplot2::ggsave(fname, p)
 }
 
+```
+
+Finally, if we look at genes that have high exon coverage but low
+intron coverage:
+
+```{r}
+low_intron_high_exon <- subset(exin_by_kit, 
+                   (log2(exon.average_coverage + 1) > 8 & log2(intron.average_coverage) < 1),
+                   select = "gene_id"
+                   ) %>% 
+  unique() %>% 
+  .$gene_id %>% 
+  S4Vectors::runValue()
+low_intron_high_exon <- setdiff(low_intron_high_exon, c(high_intron_exon, ir_genes))
+```
+
+As expected these `r length(low_intron_high_exon)` genes don't overlap
+either of the above categories. We also construct their profiles.
+
+```{r, eval = FALSE}
+for (gene in low_intron_high_exon) {
+  fname <- here::here("figures", paste0(gene, "low.cov.png"))
+  if (file.exists(fname)) break
+  p <- anno_sub %>% 
+    filter(gene_id == !!gene) %>% 
+    view_coverage_within_gene(cvg_over_features, ., "Kit")
+  ggplot2::ggsave(fname, p)
+}
 ```
