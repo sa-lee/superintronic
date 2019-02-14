@@ -100,9 +100,10 @@ merge_design <- function(cvg, design, on = NULL) {
                    !join_col,
                    drop = FALSE]
   
-  design <- design[BiocGenerics::rep.int(nr, rl), ]
+  design <- design[BiocGenerics::rep.int(nr, rl), , drop = FALSE]
   
-  mcols(cvg) <- cbind(
+  
+  mcols(cvg) <- BiocGenerics::cbind(
     mcols(cvg),
     design
   )
