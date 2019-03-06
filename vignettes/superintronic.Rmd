@@ -84,6 +84,21 @@ in the resulting GRanges object.
 ```{r compute-coverage}
 cvg <- gather_coverage(here::here("data-raw", design$File),
                        genome_info = ref)
+
+per_replicate_avg <- cvg %>% 
+  group_by(source) %>% 
+  summarise(average_replicate_coverage = mean_coverage(score, width)) 
+
+per_replicate_avg <- per_replicate_avg %>% 
+  merge(design[, c("Replicate", "Kit", "File")], 
+        by.x = "source", 
+        by.y = "File") 
+  
+per_replicate_avg <- as(per_replicate_avg, "DataFrame") %>% 
+  S4Vectors::transform(source = S4Vectors::Rle(source),
+                       Replicate = S4Vectors::Rle(Replicate),
+                       Kit = S4Vectors::Rle(Kit))
+
 ```
 
 ## Coverage over intronic/exonic regions
@@ -104,129 +119,90 @@ We can also add in elements of the experimental design by joining the design
 table to the coverage ranges:
 
 ```{r}
-
 cvg_over_features <- merge_design(cvg_over_features,
-                                  design,
-                                  on = "File")
+                                  per_replicate_avg,
+                                  on = "source")
 ```
 
 
-Now we can begin summarising, here we spread the coverage table into wide
-form by aggregating exon/intron coverage over each gene over all samples.
-We can also add a thresholding argument to compute the number of bases 
-above some score threshold and the proportion of bases above that threshold
-that cover the total length of an exon/intron within a gene.
+Now we will compute summaries over each Kit, in the following manner
 
-```{r}
-
-exin_by_kit <- spread_coverage(
-  cvg_over_features,
-  Kit,
-  threshold = 50L
-)
-
-view_exin(exin_by_kit,
-          x = log2(exon.average_coverage + 1),
-          y = log2(intron.average_coverage + 1),
-          facets = "Kit"
-          ) 
-
-view_exin(exin_by_kit,
-          x = log2(exon.average_coverage + 1),
-          y = log2(intron.n_bases_above_threshold + 1)  ,
-          facets = "Kit"
-          ) 
+* Calculate mean exon coverage per gene as `exon_avg`
+* Calculate mean intron coverage per gene, `intron_avg`
+* Calculate mean of e_g over all genes, E `gene_avg`
+* Number of intron bases with coverage above E
+* This gives the values E, L and U. 
 
 
+```{r filter-new}
+gene_avg <- cvg_over_features %>% 
+  group_by(Kit, gene_id) %>% 
+  summarise(gene_average = mean_coverage(score, width)) %>% 
+  dplyr::as_tibble()
+
+intron <- cvg_over_features %>% 
+  filter(feature_type == "intron") %>% 
+  group_by(Kit, gene_id) %>% 
+  summarise(intron_average = mean_coverage(score, width),
+            score = score, 
+            n_bases = width,
+            n_replicate = n_distinct(source),
+            feature_length = sum(unique(feature_length))) %>% 
+  dplyr::as_tibble() 
+
+exon <- cvg_over_features %>% 
+  filter(feature_type == "exon") %>% 
+  group_by(Kit, gene_id) %>% 
+  summarise(exon_average = mean_coverage(score, width)) %>% 
+  dplyr::as_tibble() %>% 
+  group_by(Kit) %>% 
+  mutate(E = mean(exon_average))
+
+all_features <- dplyr::left_join(
+  gene_avg,
+  intron %>% dplyr::left_join(exon)
+) %>% 
+  select(Kit, gene_id, dplyr::ends_with("average"), dplyr::everything())
+all_features <- all_features %>% 
+  group_by(Kit) %>% 
+  mutate(
+    total_bases_above_E = sum(as(n_bases, "IntegerList")[as(score, "IntegerList") > E]))
+all_features
 ```
 
 
-Now let's look at coverage plots for genes we designate as 'interesting'.
-
-First we look at genes that have a large number of intron bases covered
-above a score of 50 and an log2 average exon coverage above 5. 
+Now we can try out some filters...
 
 ```{r}
-ir_genes <- subset(exin_by_kit, 
-                   (log2(intron.n_bases_above_threshold + 1) > 10 & log2(exon.average_coverage + 1) > 5),
-                   select = "gene_id"
-                   ) %>% 
-  unique() %>% 
-  .$gene_id %>% 
-  S4Vectors::runValue()
-```  
+hits <- all_features %>% 
+  group_by(Kit) %>% 
+  filter(exon_average > E, intron_average < 6, total_bases_above_E > 5000) %>% 
+  ungroup() %>% 
+  group_by(gene_id)
+hits
+```
 
-This produces `r length(ir_genes)` candidates for intron retention. We can 
-look at their coverage profiles as follows:
+And plot the results:
 
-```{r, eval = FALSE}
-for (gene in ir_genes) {
-  fname <- here::here("figures", paste0(gene, "ir.cov.png"))
-  if (file.exists(fname)) break
+```{r}
+save_plot <- function(.x, .y) {
+  if (nrow(.x) == 2) {
+    fname <- paste0(.y$gene_id,  "-both-ir.png")
+  } else {
+    fname <- paste0(.y$gene_id, "-", .x$Kit, "-ir.png")
+  }
+  fname <- here::here("figures", "new-filter", fname)
   p <- anno_sub %>% 
-    filter(gene_id == !!gene) %>% 
-    view_coverage_within_gene(cvg_over_features, ., "Kit")
+    filter(gene_id == !!.y$gene_id) %>% 
+    view_coverage_within_gene(cvg_over_features, ., hline, "Kit")
   ggplot2::ggsave(fname, p)
-}
-```
+} 
+
+hline <- dplyr::distinct(all_features, Kit, E)
 
 
-Next we select genes that have both high exon and intron coverage and plot
-their coverage profiles:
+hits %>% 
+  dplyr::group_walk(save_plot)
+  
 
-```{r}
-high_intron_exon <-  subset(exin_by_kit, 
-                   (log2(exon.average_coverage + 1) > 7  & log2(intron.average_coverage) > 5 ),
-                   select = "gene_id"
-                   ) %>% 
-  unique() %>% 
-  .$gene_id %>% 
-  S4Vectors::runValue()
-
-n_hie <- length(high_intron_exon)
-
-high_intron_exon <- setdiff(high_intron_exon, ir_genes)
-```
-
-Of the `r n_hie - length(high_intron_exon)` genes not classified as intron retention , 
-there were `r length(high_intron_exon)` genes that met this criteria. 
-
-```{r, eval = FALSE}
-for (gene in high_intron_exon) {
-  fname <- here::here("figures", paste0(gene, "high.cov.png"))
-  if (file.exists(fname)) break
-  p <- anno_sub %>% 
-    filter(gene_id == !!gene) %>% 
-    view_coverage_within_gene(cvg_over_features, ., "Kit")
-  ggplot2::ggsave(fname, p)
-}
-
-```
-
-Finally, if we look at genes that have high exon coverage but low
-intron coverage:
-
-```{r}
-low_intron_high_exon <- subset(exin_by_kit, 
-                   (log2(exon.average_coverage + 1) > 8 & log2(intron.average_coverage) < 1),
-                   select = "gene_id"
-                   ) %>% 
-  unique() %>% 
-  .$gene_id %>% 
-  S4Vectors::runValue()
-low_intron_high_exon <- setdiff(low_intron_high_exon, c(high_intron_exon, ir_genes))
-```
-
-As expected these `r length(low_intron_high_exon)` genes don't overlap
-either of the above categories. We also construct their profiles.
-
-```{r, eval = FALSE}
-for (gene in low_intron_high_exon) {
-  fname <- here::here("figures", paste0(gene, "low.cov.png"))
-  if (file.exists(fname)) break
-  p <- anno_sub %>% 
-    filter(gene_id == !!gene) %>% 
-    view_coverage_within_gene(cvg_over_features, ., "Kit")
-  ggplot2::ggsave(fname, p)
-}
 ```
