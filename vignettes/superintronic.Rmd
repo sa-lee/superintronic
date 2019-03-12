@@ -21,6 +21,8 @@ knitr::opts_chunk$set(
 ## Preparing GFF/GTF files
 
 ```{r gff}
+suppressPackageStartupMessages(library(plyranges))
+library(superintronic)
 gff <- here::here("data-raw", "gencode.v27.annotation.gtf.gz")
 ref <- BSgenome.Hsapiens.UCSC.hg38::BSgenome.Hsapiens.UCSC.hg38 %>% 
   get_genome_info() %>% 
@@ -90,7 +92,7 @@ per_replicate_avg <- cvg %>%
   summarise(average_replicate_coverage = mean_coverage(score, width)) 
 
 per_replicate_avg <- per_replicate_avg %>% 
-  merge(design[, c("Replicate", "Kit", "File")], 
+  base::merge(design[, c("Replicate", "Kit", "File")], 
         by.x = "source", 
         by.y = "File") 
   
