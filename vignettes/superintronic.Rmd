@@ -16,12 +16,21 @@ knitr::opts_chunk$set(
                       message = FALSE,
                       warning = FALSE
                       )
+
+suppressPackageStartupMessages(library(plyranges))
+
+# pre cached results
+cvg_fn <- here::here("data", "cvg.rds")
+skip <- file.exists(cvg_fn)
+if (skip) {
+  cvg_over_features <- readr::read_rds(cvg_fn)
+}
+
 ```
 
 ## Preparing GFF/GTF files
 
 ```{r gff}
-suppressPackageStartupMessages(library(plyranges))
 library(superintronic)
 gff <- here::here("data-raw", "gencode.v27.annotation.gtf.gz")
 ref <- BSgenome.Hsapiens.UCSC.hg38::BSgenome.Hsapiens.UCSC.hg38 %>% 
@@ -44,7 +53,7 @@ and given a set of rules, filter the annotation (by default we include
 protein coding, genes with more than one exon, genes that do not overlap
 any other genes)
 
-```{r}
+```{r default-filter}
 anno_sub <- anno %>% 
   filter_rules()
 
@@ -83,10 +92,30 @@ An optional GRanges object may be passed to this function that will
 restrict the coverage computation to those regions; and set the annotation
 in the resulting GRanges object. 
 
-```{r compute-coverage}
+```{r compute-coverage, eval = skip}
 cvg <- gather_coverage(here::here("data-raw", design$File),
                        genome_info = ref)
 
+```
+
+## Coverage over intronic/exonic regions
+
+Now all the ingredients are in place to merge the coverage scores
+to our prepared annotation with `merge_coverage()`. This again
+returns a GRanges object, restricted to the intersection of the 
+coverage ranges with intron/exon ranges. Additional columns are added
+corresponding to the properties of the intron/exon.
+
+```{r merge-annotations, eval = skip}
+cvg_over_features <- merge_coverage(cvg, anno_sub)
+
+cvg_over_features
+```
+
+We can also add in elements of the experimental design by joining the design
+table to the coverage ranges:
+
+```{r merge-design, eval = skip}
 per_replicate_avg <- cvg %>% 
   group_by(source) %>% 
   summarise(average_replicate_coverage = mean_coverage(score, width)) 
@@ -101,26 +130,6 @@ per_replicate_avg <- as(per_replicate_avg, "DataFrame") %>%
                        Replicate = S4Vectors::Rle(Replicate),
                        Kit = S4Vectors::Rle(Kit))
 
-```
-
-## Coverage over intronic/exonic regions
-
-Now all the ingredients are in place to merge the coverage scores
-to our prepared annotation with `merge_coverage()`. This again
-returns a GRanges object, restricted to the intersection of the 
-coverage ranges with intron/exon ranges. Additional columns are added
-corresponding to the properties of the intron/exon.
-
-```{r}
-cvg_over_features <- merge_coverage(cvg, anno_sub)
-
-cvg_over_features
-```
-
-We can also add in elements of the experimental design by joining the design
-table to the coverage ranges:
-
-```{r}
 cvg_over_features <- merge_design(cvg_over_features,
                                   per_replicate_avg,
                                   on = "source")
@@ -131,9 +140,7 @@ Now we will compute summaries over each Kit, in the following manner
 
 * Calculate mean exon coverage per gene as `exon_avg`
 * Calculate mean intron coverage per gene, `intron_avg`
-* Calculate mean of e_g over all genes, E `gene_avg`
-* Number of intron bases with coverage above E
-* This gives the values E, L and U. 
+
 
 
 ```{r filter-new}
@@ -196,7 +203,7 @@ save_plot <- function(.x, .y) {
   fname <- here::here("figures", "new-filter", fname)
   p <- anno_sub %>% 
     filter(gene_id == !!.y$gene_id) %>% 
-    view_coverage_within_gene(cvg_over_features, ., hline, "Kit")
+    view_coverage(cvg_over_features, ., hline, "Kit")
   ggplot2::ggsave(fname, p)
 } 
 
