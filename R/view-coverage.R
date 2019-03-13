@@ -2,7 +2,7 @@
 #' 
 #' @param cvg a GRanges object obtained from `merge_coverage()`
 #' @param target a GRanges object from `prepare_annotation()` containing a gene_id column
-#' 
+#' @param hline an optional data.frame giving marker points
 #' @param facets a set of variables quoted by `ggplot2::vars()` that is passed 
 #' down to `facet_wrap()`
 #'
