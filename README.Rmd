@@ -148,16 +148,16 @@ over a given index accross a column representing the coverage score.
 * near_feature_covnostic
 
 This is conceptually similar to `dplyr::summarise_at` 
-```{r}
+```{r, eval=FALSE}
 covnostics(cvg_over_features, y = score, .funs, ...)
 ```
 
 ## Visualising coverage scores
 
-
 Options for visualising coverage over a given range 
-```{r}
+```{r, eval = FALSE}
 view_coverage(cvg, target)
 ```
 
-This returns a regular old ggplot object, so segments can be 
+This returns a regular old ggplot object, so segments can be overlaid with
+by adding to the plot object.

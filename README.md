@@ -5,7 +5,7 @@
 
 [![lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
 
-Explore intron signal in high-throughput (RNA) sequencing data via
+Exploring coverage signal in high-throughput (RNA) sequencing data via
 coverage estimation.
 
 *superintronic* centers around exploring coverage over exonic and
@@ -27,9 +27,18 @@ The basic workflow consists of three steps
 We assume you are starting from a GTF/GFF file for your given organism.
 The reading of the GFF file is done external to this package, and can be
 done via `rtracklayer::import` or `plyranges::read_gff`. The resulting
-GRanges is passed to `prepare_annotation()`, then default filters are
-applied using `filter_rules()`. Note that your own filters can be
-supplied to `filter_rules()` which will override the default options.
+GRanges is passed to `collect_parts()`, then you can use
+`plyranges::filter` to select the criteria for genes you’re interested
+in.
+
+Note that `collect_parts()` should be a generic and dispatch on the
+following annotation objects:
+
+  - character
+  - GFF/GTFFile
+  - TxDb
+  - EnsDb
+  - Others (??)
 
 The result is a GRanges object with number of rows equal to genes, and
 columns containing the intronic and exonic features (as list columns).
@@ -42,64 +51,103 @@ gff <- "my.gff"
 
 features <- gff %>% 
   plyranges::read_gff() %>% 
-  prepare_annotation() %>% 
-  filter_rules()
+  collect_parts() 
 ```
 
 ## Computing coverage over BAM(s)
 
-Here we computer a GRanges containing coverage scores in parallel over a
-set of BAM files. The parallel computation is achieved with
-`BiocParallel`. The result is a long GRanges containing columns called
-`score` and `source`. An optional GRanges may be passed to this function
-to restrict coverage to compute over selected contigs/chromosomes.
+### Making coverage scores into a tidy GRanges
+
+Here we compute a long form GRanges containing coverage scores in
+parallel over a set of BAM files. We have structured it so you specify a
+data frame, (like you would get from targets in `limma`), that contains
+a column identified by `source`, that specifies the BAM file names.
+Other options include specifying a GRanges that represents the genome
+build, an optional target GRanges for restricting coverage, and
+`BPPARAM` obejct for perfoming parallel computations.
 
 ``` r
-bams <- dir(pattern = "*.bam")
-cvg <- gather_coverage(bams)
+# is generic - should be able to dispatch on just the names of a BAM file too
+compute_coverage_long(design,
+                      source,
+                      .target = GenomicRanges::GRanges(),
+                      .genome_info,
+                      .parallel = BiocParallel::bpparam()
+                      )
 ```
 
-The coverage scores are then restricted by merging the filtered features
+This function automatically propagates, the metadata associated with a
+design onto the resulting GRanges
+
+As an example, let’s use BAM files from the
+[`airway`](https://bioconductor.org/packages/release/data/experiment/html/airway.html)
+data package.
 
 ``` r
-# maybe better name would be restrict_coverage
-cvg_over_features <- merge_coverage(cvg, features)
+design <- read.csv(system.file("extdata", 
+                               "sample_table.csv", 
+                               package = "airway"),
+                   row.names = FALSE)
+design$bam <- dir(system.file("extdata", package = "airway"), 
+                  pattern = "*.bam",
+                  recursive = TRUE)
+
+cvg <- compute_coverage_long(design, source = "bam")
+cvg
 ```
 
-Experimental design variables can be then added with
+Once the coverage is in long form, we can then merge overlapping genomic
+features over the experimental design via an intersect overlap join and
+nesting over the union ranges of an index index (usually gene\_id).
 
 ``` r
-cvg_over_features <- merge_design(cvg_over_features, design)
+cvg_over_features <- nest_by_targets(cvg,
+                                  target, 
+                                  key = sample,
+                                  range_index = gene_id
+                                  )
 ```
 
-This requires an additional `data.frame` that contains a column that
-matches the BAM file input.
+### Computing coverage wide form
 
-## Summarising Overlaps
-
-There are two modes of summarisation that aggregate over the union set
-of introns/exons (called `spread_coverage()`) or over each individual
-intron/exon within a gene (called `squish_coverage()`). Both of these
-functions are able to compute over variables in experimental design or
-within samples.
+Returns a `RaggedExperiment` object (useful for doing things like PCA
+etc.)
 
 ``` r
-# over all samples
-spread_coverage(cvg_over_features)
-# within each BAM file
-spread_coverage(cvg_over_features, source)
-# within a design variable
-spread_coverage(cvg_over_features, var)
+compute_coverage_wide(design,
+                      source,
+                      .target = GenomicRanges::GRanges(),
+                      .genome_info,
+                      .parallel = BiocParallel::bpparam()
+                      )
+```
 
-# over all samples
-squish_coverage(cvg_over_features)
-# within each BAM file
-squish_coverage(cvg_over_features, source)
-# within a design variable
-squish_coverage(cvg_over_features, var)
+## Coverage diagnostics
+
+We can then compute a bunch of `covnostics`, over a given index accross
+a column representing the coverage score.
+
+  - mean
+  - min, median, max
+  - quantile
+  - variance
+  - variance\_shift
+  - bases\_above\_score
+  - near\_feature\_covnostic
+
+This is conceptually similar to `dplyr::summarise_at`
+
+``` r
+covnostics(cvg_over_features, y = score, .funs, ...)
 ```
 
 ## Visualising coverage scores
 
-The output of `spread_coverage()` can be visualised with `view_exin()`
-and coverage plots over genes with `view_coverage_within_gene()`.
+Options for visualising coverage over a given range
+
+``` r
+view_coverage(cvg, target)
+```
+
+This returns a regular old ggplot object, so segments can be overlaid
+with by adding to the plot object.
