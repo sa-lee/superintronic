@@ -38,9 +38,17 @@ The basic workflow consists of three steps
 We assume you are starting from a GTF/GFF file for your given organism. 
 The reading of the GFF file is done external to this package, 
 and can be done via `rtracklayer::import` or `plyranges::read_gff`.
-The resulting GRanges is passed to `prepare_annotation()`, then default
-filters are applied using `filter_rules()`. Note that your own filters
-can be supplied to `filter_rules()` which will override the default options.
+The resulting GRanges is passed to `collect_parts()`, then you can use
+`plyranges::filter` to select the criteria for genes you're interested in.
+
+Note that `collect_parts()` should be a generic and dispatch on the following
+annotation objects:
+
+* character
+* GFF/GTFFile
+* TxDb
+* EnsDb
+* Others (??)
 
 The result is a GRanges object with number of rows equal to genes,
 and columns containing the intronic and exonic features (as list columns). 
@@ -52,9 +60,7 @@ gff <- "my.gff"
 
 features <- gff %>% 
   plyranges::read_gff() %>% 
-  prepare_annotation() %>% 
-  filter_rules()
-
+  collect_parts() 
 ```
 
 ## Computing coverage over BAM(s)
@@ -70,6 +76,7 @@ target GRanges for restricting coverage, and `BPPARAM` obejct for perfoming
 parallel computations.
 
 ```{r, eval = FALSE}
+# is generic - should be able to dispatch on just the names of a BAM file too
 compute_coverage_long(design,
                       source,
                       .target = GenomicRanges::GRanges(),
@@ -104,12 +111,10 @@ features over the experimental design via an intersect overlap join and nesting
 over the union ranges of an index  index (usually gene_id).
 
 ```{r, eval = FALSE}
-# i sketched this out but can't remember what i called it in my notes
-# currently implemented as spread 
 cvg_over_features <- nest_by_targets(cvg,
                                   target, 
                                   key = sample,
-                                  range_id = gene_id
+                                  range_index = gene_id
                                   )
 ```
 
@@ -132,7 +137,7 @@ compute_coverage_wide(design,
 ## Coverage diagnostics 
 
 We can then compute a bunch of `covnostics`,
-over a given index:
+over a given index accross a column representing the coverage score.
 
 * mean
 * min, median, max
@@ -140,7 +145,12 @@ over a given index:
 * variance
 * variance_shift
 * bases_above_score
-* near_feature_mean
+* near_feature_covnostic
+
+This is conceptually similar to `dplyr::summarise_at` 
+```{r}
+covnostics(cvg_over_features, y = score, .funs, ...)
+```
 
 ## Visualising coverage scores
 
@@ -150,3 +160,4 @@ Options for visualising coverage over a given range
 view_coverage(cvg, target)
 ```
 
+This returns a regular old ggplot object, so segments can be 
