@@ -1,0 +1,185 @@
+#' Compute long-form coverage
+#' 
+#' @param spec a `data.frame` containing an experimental design
+#' @param source a column in the data identifying the name of BAM files
+#' @param .target an optional GRanges object (default = NULL) to compute coverage
+#' over a region (requires the BAM file to be indexed).
+#' @param .genome_info a GRanges object containing reference annotation (default = NULL)
+#' @param .drop_empty Filter ranges if they have zero coverage over an entire contig/chromosome (default TRUE)
+#' @param .parallel a BiocParallel object (default = `BiocParallel::bpparam()`)
+#' 
+#' @details This function computes coverage as a GRanges object, with
+#' a `source` column containing the name of the input BAM file(s), and a
+#' `score` column containing the coverage score. 
+#' 
+#' The `.genome_info` argument takes a GRanges object containing 
+#' contig/chromosome information. If supplied the resulting GRanges will be 
+#' properly annotated with a `seqinfo` slot. This is important for ensure the
+#' integrity of any downstream overlap operations. 
+#' 
+#' @return a GRanges object
+#' 
+#' @importFrom BiocParallel bpparam bplapply
+#' @importFrom Rsamtools BamFile BamFileList
+#' @importClassesFrom Rsamtools BamFileList BamFile
+#' @importFrom GenomeInfoDb seqinfo seqinfo<- keepSeqlevels
+#' @export
+methods::setGeneric("compute_coverage_long",
+                    signature = c("spec", "source"),
+                    function(spec, source, ...) {
+                      methods::standardGeneric("compute_coverage_long")
+                    })
+
+
+#'@export 
+methods::setMethod("compute_coverage_long", 
+                   signature = c("character", "missing"),
+                   function(spec, source, .target = NULL, .genome_info = NULL, .drop_empty = TRUE, .parallel = BiocParallel::bpparam()) {
+                     bfl <- BamFileList(spec)
+                     .bamlist_coverage(bfl, .target, .genome_info, .parallel)
+                   })
+
+
+methods::setMethod("compute_coverage_long",
+                   signature = c("DataFrame", "character"),
+                   function(spec, source, .target = NULL, .genome_info = NULL, .drop_empty = TRUE, .parallel = BiocParallel::bpparam()) {
+                     bfl <- BamFileList(spec[[source]])
+                     spec[[source]] <- as(spec[[source]], "Rle")
+                     S4Vectors::mcols(bfl) <- spec
+                     .bamlist_coverage(bfl, .target, .genome_info, .drop_empty, .parallel)
+                   })
+
+methods::setMethod("compute_coverage_long",
+                   signature = c("data.frame", "character"), 
+                   function(spec, source, .target = NULL, .genome_info = NULL, .drop_empty = TRUE, .parallel = BiocParallel::bpparam()) {
+                     spec <- as(spec, "DataFrame")
+                     compute_coverage_long(spec, 
+                                           source, 
+                                           .target, 
+                                           .genome_info, 
+                                           .drop_empty, 
+                                           .parallel)
+                   }
+)
+.bamlist_coverage <- function(bfl, .target, .genome_info, .drop_empty, .parallel) {
+  
+  sb <- Rsamtools::ScanBamParam()
+  
+  if (!is.null(.target)) {
+    sb <- Rsamtools::ScanBamParam(which = .target)
+  }
+  
+  cvg  <- BiocParallel::bplapply(
+    bfl,
+    FUN = function(x) {
+        compute_coverage(x, param = sb)
+      },
+    BPPARAM = .parallel
+    ) 
+  
+  cvg <- GenomicRanges::GRangesList(cvg)
+  
+  if (!is.null(S4Vectors::mcols(bfl))) {
+    md  <- S4Vectors::mcols(bfl)
+  } else {
+    md <- S4Vectors::DataFrame(source = S4Vectors::Rle(names(cvg)))
+  }
+  
+  if (!is.null(.genome_info)) {
+    cvg <- GenomeInfoDb::keepSeqlevels(cvg, 
+                                       GenomeInfoDb::seqnames(.genome_info), 
+                                       "tidy")
+    seqinfo(cvg) <- seqinfo(.genome_info)
+  }
+  
+  if (.drop_empty) {
+    .drop_rng <- as(seqinfo(cvg), "GRanges")
+    cvg <- S4Vectors::endoapply(cvg,
+                  function(x) {
+                    IRanges::subsetByOverlaps(x, .drop_rng, 
+                                              type = "equal", invert = TRUE)
+                  }
+    )
+  }
+  
+  inx <- S4Vectors::rep.int(seq_along(cvg), S4Vectors::elementNROWS(cvg))
+  cvg <- unlist(cvg, use.names = FALSE)
+  md <- md[inx,, drop = FALSE]
+  mcols(cvg) <- cbind(md, mcols(cvg))
+  cvg
+}
+
+#' Merge experimental design onto coverage features
+#' 
+#' @param cvg a GRanges object from `gather_coverage()` or `merge_coverage()`
+#' @param design a DataFrame object with 
+#' @param on a column name in `design` that links to the `source` column in `cvg`.
+#' 
+#' @details 
+#' To summarise coverage features over variables in the experimental `design`,
+#' we require those features to be joins to the coverage GRanges. This
+#' requires the design table to have a column that matches the file names
+#' generated by `gather_coverage()`.
+#'
+#' @export
+merge_design <- function(cvg, design, on = NULL) {
+  # for some reason though base::merge is really slow
+  # so have gone for a kludgy indexing approach
+  stopifnot(any(names(mcols(cvg)) %in% "source"))
+  if (is.null(on)) {
+    on <- "source"
+  }
+  
+  join_col <- names(design) %in% on
+  stopifnot(any(join_col))
+  stopifnot(is(design, "data.frame") | is(design, "DataFrame"))
+  
+  diff <- BiocGenerics::setdiff(
+    S4Vectors::runValue(mcols(cvg)[["source"]]),
+    design[[on]]
+  )
+  if (length(diff) > 0) {
+    cvg <- plyranges::filter(cvg, !(source %in% !!diff))
+  }
+  
+  cvg <- cvg[BiocGenerics::order(mcols(cvg)[["source"]]), ]
+  
+  nr <- seq_len(S4Vectors::nrun(mcols(cvg)[["source"]]))
+  rl <- S4Vectors::runLength(mcols(cvg)[["source"]])
+  
+  design <- design[BiocGenerics::order(design[[on]]), 
+                   !join_col,
+                   drop = FALSE]
+  
+  design <- design[BiocGenerics::rep.int(nr, rl), , drop = FALSE]
+  
+  
+  mcols(cvg) <- BiocGenerics::cbind(
+    mcols(cvg),
+    design
+  )
+  cvg
+}
+
+
+common_mcols <- function(x, y, by = NULL) {
+  x_names <- names(mcols(x))
+  y_names <- names(mcols(y))
+  if (is.null(by)) {
+    common_mcols <- intersect(x_names,  y_names)
+    if (length(common_mcols) == 0) {
+      stop("No common columns between x & y", call. = FALSE)
+    }
+    return(common_mcols)
+  } else {
+    named_by <- names(by)
+    if (length(named_by) > 0) {
+      stopifnot(named_by %in% x_names || by %in% y_names)
+      by
+      
+    } else {
+      stopifnot(by %in% x_names || by %in% y_names)
+      by
+    }
+  }
+}
