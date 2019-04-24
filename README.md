@@ -31,14 +31,13 @@ GRanges is passed to `collect_parts()`, then you can use
 `plyranges::filter` to select the criteria for genes you’re interested
 in.
 
-Note that `collect_parts()` should be a generic and dispatch on the
-following annotation objects:
+Note that `collect_parts()` is a generic and dispatches on the following
+annotation objects:
 
-  - character
+  - character representing a file path
   - GFF/GTFFile
   - TxDb
   - EnsDb
-  - Others (??)
 
 The result is a GRanges object with number of rows equal to genes, and
 columns containing the intronic and exonic features (as list columns).
@@ -68,7 +67,7 @@ build, an optional target GRanges for restricting coverage, and
 
 ``` r
 # is generic - should be able to dispatch on just the names of a BAM file too
-compute_coverage_long(design,
+compute_coverage_long(spec,
                       source,
                       .target = GenomicRanges::GRanges(),
                       .genome_info,
@@ -87,10 +86,10 @@ data package.
 design <- read.csv(system.file("extdata", 
                                "sample_table.csv", 
                                package = "airway"),
-                   row.names = FALSE)
+                   )
 design$bam <- dir(system.file("extdata", package = "airway"), 
                   pattern = "*.bam",
-                  recursive = TRUE)
+                  full.names = TRUE)
 
 cvg <- compute_coverage_long(design, source = "bam")
 cvg
@@ -103,7 +102,7 @@ nesting over the union ranges of an index index (usually gene\_id).
 ``` r
 cvg_over_features <- nest_by_targets(cvg,
                                   target, 
-                                  key = sample,
+                                  key = SampleName,
                                   range_index = gene_id
                                   )
 ```
