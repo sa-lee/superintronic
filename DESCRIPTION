@@ -11,8 +11,18 @@ Description:
     superintronic stimates coverage over intronic/exonic regions within
     genes given an annotation and an experimental design. It allows the 
     user to quickly summarise any intron signal, and visualise the
-    coverage regions with their gnee context. 
-Imports: plyranges, Rsamtools, S4Vectors, GenomicFeatures, rlang, BiocGenerics, GenomeInfoDb, ggplot2, patchwork
+    coverage regions with their gene context. 
+Imports: 
+  plyranges,
+  methods,
+  Rsamtools, 
+  S4Vectors, 
+  GenomicFeatures, 
+  rlang, 
+  BiocGenerics, 
+  GenomeInfoDb, 
+  ggplot2, 
+  patchwork
 Suggests: BiocStyle, knitr, rmarkdown
 License: Artistic-2.0
 Encoding: UTF-8

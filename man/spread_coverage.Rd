@@ -4,14 +4,12 @@
 \alias{spread_coverage}
 \title{Spread intron/exon coverage over a gene}
 \usage{
-spread_coverage(x, ..., threshold = 0L)
+spread_coverage(x, ...)
 }
 \arguments{
 \item{x}{a GRanges object from `merge_coverage()` and or `merge_design()`}
 
 \item{...}{columns to partition x}
-
-\item{threshold}{Filter bases covered to above some integer threshold (default = 0L).}
 }
 \description{
 Spread intron/exon coverage over a gene

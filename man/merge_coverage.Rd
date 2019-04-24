@@ -9,7 +9,7 @@ merge_coverage(cvg, features)
 \arguments{
 \item{cvg}{a GRanges object from `gather_coverage()`}
 
-\item{features}{a GRanges object from `prepare_annotation()`}
+\item{features}{a GRanges object from `collect_parts()`}
 }
 \value{
 a GRanges object
@@ -19,13 +19,12 @@ Restrict coverage over features
 }
 \details{
 This function restricts the coverage GRanges, `cvg` to the ranges
-that intersect the `simple_exonic` and `simple_intronic` ranges, the result
+that intersect the `exonic_parts` and `simple_intronic` ranges, the result
 is a GRanges object with additional columns: 
 
 * `gene_id`, the gene_id from `features` corresponding to an exon/intron.
 * `feature_type`, whether the range corresponds to an exon or intro feature.
 * `feature_rank`, the rank of the exon/intron feature within a gene.
 * `feature_length`, the width of the exon/intron
-* `feature_prop_covered`, the proportion of bases that overlap a feature
 * `feature_strand`, the strand of the exon/intron
 }
