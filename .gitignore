@@ -2,3 +2,5 @@ inst/doc
 data-raw/
 ^.*\.Rproj$
 ^\.Rproj\.user$
+.Rproj.user/
+*.Rproj
