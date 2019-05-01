@@ -293,7 +293,10 @@ We can then compute a bunch of `rangostics` (name TBD), over a given
   - bases\_above\_score
   - near\_feature\_*covnostic*
 
-This is conceptually similar to `dplyr::mutate_at`
+Includes functions for purrr like mapping for sliding/tiling/stretching
+over genomic windows.
+
+This is conceptually similar to `dplyr::summarise_at`
 
 ``` r
 rangostics(cvg_over_features, y = score, wt = width, .funs, ...)
@@ -304,12 +307,22 @@ rangostics(cvg_over_features, y = score, wt = width, .funs, ...)
 Options for visualising coverage over a given range
 
 ``` r
+cvg_over_features <- flatten_merge(cvg, features) 
 
-flatten_merge(cvg, features) %>% 
+cvg_over_features %>% 
   view_coverage(., filter(features, gene_id == "ENSG00000116649"))
 ```
 
 <img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" />
+
+``` r
+
+cvg_over_features %>% 
+  view_coverage(., filter(features, gene_id == "ENSG00000116649"),
+                facets = dplyr::vars(dex))
+```
+
+<img src="man/figures/README-unnamed-chunk-7-2.png" width="100%" />
 
 This returns a regular old ggplot object, so segments can be overlaid
 with by adding to the plot object.
