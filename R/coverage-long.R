@@ -24,23 +24,23 @@
 #' @importClassesFrom Rsamtools BamFileList BamFile
 #' @importFrom GenomeInfoDb seqinfo seqinfo<- keepSeqlevels
 #' @export
-methods::setGeneric("compute_coverage_long",
+setGeneric("compute_coverage_long",
                     signature = c("spec", "source"),
                     function(spec, source, ...) {
-                      methods::standardGeneric("compute_coverage_long")
+                      standardGeneric("compute_coverage_long")
                     })
 
 
 #'@export 
-methods::setMethod("compute_coverage_long", 
+setMethod("compute_coverage_long", 
                    signature = c("character", "missing"),
                    function(spec, source, .target = NULL, .genome_info = NULL, .drop_empty = TRUE, .parallel = BiocParallel::bpparam()) {
                      bfl <- BamFileList(spec)
                      .bamlist_coverage(bfl, .target, .genome_info, .parallel)
                    })
 
-
-methods::setMethod("compute_coverage_long",
+#'@export 
+setMethod("compute_coverage_long",
                    signature = c("DataFrame", "character"),
                    function(spec, source, .target = NULL, .genome_info = NULL, .drop_empty = TRUE, .parallel = BiocParallel::bpparam()) {
                      bfl <- BamFileList(spec[[source]])
@@ -51,11 +51,11 @@ methods::setMethod("compute_coverage_long",
                                               .genome_info, 
                                               .drop_empty, 
                                               .parallel)
-                     S4Vectors::mcols(ans)[[source]] <-basename(S4Vectors::mcols(ans)[[source]])
+                     # S4Vectors::mcols(ans)[[source]] <-BiocGenerics::basename(S4Vectors::mcols(ans)[[source]])
                      ans
                    })
-
-methods::setMethod("compute_coverage_long",
+#'@export 
+setMethod("compute_coverage_long",
                    signature = c("data.frame", "character"), 
                    function(spec, source, .target = NULL, .genome_info = NULL, .drop_empty = TRUE, .parallel = BiocParallel::bpparam()) {
                      spec <- as(spec, "DataFrame")
@@ -67,6 +67,8 @@ methods::setMethod("compute_coverage_long",
                                            .parallel)
                    }
 )
+
+# work horse function
 .bamlist_coverage <- function(bfl, .target, .genome_info, .drop_empty, .parallel) {
   
   sb <- Rsamtools::ScanBamParam()

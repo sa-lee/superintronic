@@ -28,14 +28,14 @@
 #' @importClassesFrom GenomicFeatures TxDb
 #' @importClassesFrom rtracklayer GFFFile GTFFile 
 #' @export   
-methods::setGeneric("collect_parts", 
+setGeneric("collect_parts", 
                     function(annotation, ...) {
-                      methods::standardGeneric("collect_parts")
+                      standardGeneric("collect_parts")
                     }
 )
 
 #' @export
-methods::setMethod("collect_parts", 
+setMethod("collect_parts", 
                    signature = "GRanges",
                    function(annotation, ...) {
                      .collect_parts_default(annotation)
@@ -43,7 +43,7 @@ methods::setMethod("collect_parts",
 
 
 #' @export
-methods::setMethod("collect_parts", 
+setMethod("collect_parts", 
                    signature = "character",
                    function(annotation, ...) {
                      is_gff_or_gtf <- grepl(".(gff)$|(gtf)$", 
@@ -60,7 +60,7 @@ methods::setMethod("collect_parts",
                    })
 
 #' @export
-methods::setMethod("collect_parts", 
+setMethod("collect_parts", 
                    signature = "GFFFile",
                    function(annotation, ...) {
                      collect_parts(rtracklayer::import(annotation,...))
@@ -68,7 +68,7 @@ methods::setMethod("collect_parts",
 
 
 #' @export
-methods::setMethod("collect_parts", 
+setMethod("collect_parts", 
                    signature = "TxDb", 
                    function(annotation) {
                      .collect_parts_txdb(annotation)
@@ -88,7 +88,7 @@ methods::setMethod("collect_parts",
 
 .collect_parts_default <- function(annotation) {
   # required inputs are gene_id and type
-  stopifnot(sum(names(mcols(gr)) %in% c("gene_id", "type")) == 2L)
+  stopifnot(sum(names(mcols(annotation)) %in% c("gene_id", "type")) == 2L)
   
   # cast gene_id as Rle
   annotation <- plyranges::mutate(annotation, gene_id = as(gene_id, "Rle"))
