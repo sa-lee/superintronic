@@ -7,7 +7,7 @@
 spread_coverage(x, ...)
 }
 \arguments{
-\item{x}{a GRanges object from `merge_coverage()` and or `merge_design()`}
+\item{x}{a GRanges object from \code{merge_coverage()} and or \code{merge_design()}}
 
 \item{...}{columns to partition x}
 }
@@ -15,7 +15,7 @@ spread_coverage(x, ...)
 Spread intron/exon coverage over a gene
 }
 \details{
-This function summarises the *total* coverage within an exon/intron
+This function summarises the \emph{total} coverage within an exon/intron
 for each gene, it then widens the result so there are seperate columns
 for each exon/intron variable.
 }

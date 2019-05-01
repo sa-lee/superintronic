@@ -11,8 +11,8 @@ view_xy(data, x, y, facets = ggplot2::vars(), geom = "point")
 
 \item{x, y}{bare variable names for the x,y plot aesthetics}
 
-\item{facets}{a set of variables quoted by `ggplot2::vars()` that is passed 
-down to `facet_wrap()`}
+\item{facets}{a set of variables quoted by \code{ggplot2::vars()} that is passed
+down to \code{facet_wrap()}}
 
 \item{geom}{produce a 'point' scatter or a 'hex' scatter or c('hex', 'point')
 for both}

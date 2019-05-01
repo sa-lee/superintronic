@@ -35,6 +35,11 @@ flatten_parts <- function(x) {
 }
 
 
+#' Flatten exonic/intronic parts and intersect with ranges
+#' 
+#' @param x a GRanges object
+#' @param parts an annotation GRanges from `collect_parts()`
+#' 
 #' @export
 flatten_merge <- function(x, parts) {
   f <- flatten_parts(parts)
@@ -47,8 +52,8 @@ flatten_merge <- function(x, parts) {
 #' 
 #' @param ranges a GRanges object 
 #' @param features a GRanges object from `collect_parts()`
-#' @param key one or more columns to group ranges
-#' @param index one or more columns to group overlaps by
+#' @param .key one or more columns to group ranges
+#' @param .index one or more columns to group overlaps by
 #' 
 #' 
 #' @details This function restricts the coverage GRanges, `cvg` to the ranges
@@ -73,7 +78,7 @@ nest_by_overlaps <- function(ranges, features, .key, .index) {
   olap <- group_by(olap, !!!.groups)
   
   olap_reduced <- plyranges::reduce_ranges(olap, !!!.nest_vars)
-
+  olap_reduced
 }
 
 

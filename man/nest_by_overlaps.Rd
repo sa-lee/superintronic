@@ -9,11 +9,11 @@ nest_by_overlaps(ranges, features, .key, .index)
 \arguments{
 \item{ranges}{a GRanges object}
 
-\item{features}{a GRanges object from `collect_parts()`}
+\item{features}{a GRanges object from \code{collect_parts()}}
 
-\item{key}{one or more columns to group ranges}
+\item{.key}{one or more columns to group ranges}
 
-\item{index}{one or more columns to group overlaps by}
+\item{.index}{one or more columns to group overlaps by}
 }
 \value{
 a GRanges object
@@ -22,13 +22,14 @@ a GRanges object
 Nest by Overlapping Ranges
 }
 \details{
-This function restricts the coverage GRanges, `cvg` to the ranges
-that intersect the `exonic_parts` and `intronic_parts` ranges, the result
-is a GRanges object with additional columns: 
-
-* `gene_id`, the gene_id from `features` corresponding to an exon/intron.
-* `feature_type`, whether the range corresponds to an exon or intro feature.
-* `feature_rank`, the rank of the exon/intron feature within a gene.
-* `feature_length`, the width of the exon/intron
-* `feature_strand`, the strand of the exon/intron
+This function restricts the coverage GRanges, \code{cvg} to the ranges
+that intersect the \code{exonic_parts} and \code{intronic_parts} ranges, the result
+is a GRanges object with additional columns:
+\itemize{
+\item \code{gene_id}, the gene_id from \code{features} corresponding to an exon/intron.
+\item \code{feature_type}, whether the range corresponds to an exon or intro feature.
+\item \code{feature_rank}, the rank of the exon/intron feature within a gene.
+\item \code{feature_length}, the width of the exon/intron
+\item \code{feature_strand}, the strand of the exon/intron
+}
 }

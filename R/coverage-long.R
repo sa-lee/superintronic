@@ -24,14 +24,16 @@
 #' @importClassesFrom Rsamtools BamFileList BamFile
 #' @importFrom GenomeInfoDb seqinfo seqinfo<- keepSeqlevels
 #' @export
+#' @rdname compute_coverage_long
 setGeneric("compute_coverage_long",
                     signature = c("spec", "source"),
-                    function(spec, source, ...) {
+                    function(spec, source, .target = NULL, .genome_info = NULL, .drop_empty = TRUE, .parallel = BiocParallel::bpparam()) {
                       standardGeneric("compute_coverage_long")
                     })
 
 
-#'@export 
+#'@export
+#'@rdname compute_coverage_long 
 setMethod("compute_coverage_long", 
                    signature = c("character", "missing"),
                    function(spec, source, .target = NULL, .genome_info = NULL, .drop_empty = TRUE, .parallel = BiocParallel::bpparam()) {
@@ -40,6 +42,7 @@ setMethod("compute_coverage_long",
                    })
 
 #'@export 
+#'@rdname compute_coverage_long
 setMethod("compute_coverage_long",
                    signature = c("DataFrame", "character"),
                    function(spec, source, .target = NULL, .genome_info = NULL, .drop_empty = TRUE, .parallel = BiocParallel::bpparam()) {
@@ -55,10 +58,11 @@ setMethod("compute_coverage_long",
                      ans
                    })
 #'@export 
+#'@rdname compute_coverage_long
 setMethod("compute_coverage_long",
                    signature = c("data.frame", "character"), 
                    function(spec, source, .target = NULL, .genome_info = NULL, .drop_empty = TRUE, .parallel = BiocParallel::bpparam()) {
-                     spec <- as(spec, "DataFrame")
+                     spec <- methods::as(spec, "DataFrame")
                      compute_coverage_long(spec, 
                                            source, 
                                            .target, 
@@ -101,7 +105,7 @@ setMethod("compute_coverage_long",
   }
   
   if (.drop_empty) {
-    .drop_rng <- as(seqinfo(cvg), "GRanges")
+    .drop_rng <- methods::as(seqinfo(cvg), "GRanges")
     cvg <- S4Vectors::endoapply(cvg,
                   function(x) {
                     IRanges::subsetByOverlaps(x, .drop_rng, 
@@ -146,7 +150,7 @@ join_design <- function(ranges, design, by = NULL) {
   key_y <- by
   is_named_by <- length(names(by)) == 1
   
-  col_x <- as(mcols(ranges)[[key_x]], "Rle")
+  col_x <- methods::as(mcols(ranges)[[key_x]], "Rle")
   col_y <- design[[key_y]]
   
   if (is_named_by) key_x <- names(by)

@@ -12,17 +12,17 @@ join_design(ranges, design, by = NULL)
 \item{design}{a DataFrame object with}
 
 \item{by}{the key column either a character vector of the common columns
-between `ranges` and `design` or a named character vector (default = NULL).}
+between \code{ranges} and \code{design} or a named character vector (default = NULL).}
 }
 \description{
 Merge a design matrix onto a GRanges object
 }
 \details{
-To summarise ranges features over variables in the experimental `design`,
-we can join the `design`` matrix to a `ranges` object. 
-This function computes an inner join on the common key between the two 
+To summarise ranges features over variables in the experimental \code{design},
+we can join the \code{design`` matrix to a }ranges` object.
+This function computes an inner join on the common key between the two
 objects and sorts by the key.
 }
 \seealso{
-`dplyr::inner_join()`
+\code{dplyr::inner_join()}
 }

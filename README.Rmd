@@ -168,7 +168,7 @@ over genomic windows.
 
 This is conceptually similar to `dplyr::summarise_at` 
 ```{r, eval=FALSE}
-rangostics(cvg_over_features, y = score, wt = width, .funs, ...)
+rango(cvg_over_features, y = score, wt = width, .funs, ...)
 ```
 
 ## Visualising coverage scores

@@ -7,14 +7,14 @@
 view_coverage(cvg, target, hline = NULL, facets = ggplot2::vars())
 }
 \arguments{
-\item{cvg}{a GRanges object obtained from `merge_coverage()`}
+\item{cvg}{a GRanges object obtained from \code{merge_coverage()}}
 
-\item{target}{a GRanges object from `prepare_annotation()` containing a gene_id column}
+\item{target}{a GRanges object from \code{prepare_annotation()} containing a gene_id column}
 
 \item{hline}{an optional data.frame giving marker points}
 
-\item{facets}{a set of variables quoted by `ggplot2::vars()` that is passed 
-down to `facet_wrap()`}
+\item{facets}{a set of variables quoted by \code{ggplot2::vars()} that is passed
+down to \code{facet_wrap()}}
 }
 \description{
 View coverage as a stacked area chart

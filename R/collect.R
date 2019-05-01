@@ -26,8 +26,10 @@
 #' 
 #' @return a GRanges object
 #' @importClassesFrom GenomicFeatures TxDb
-#' @importClassesFrom rtracklayer GFFFile GTFFile 
-#' @export   
+#' @importClassesFrom rtracklayer GFFFile GTFFile
+#'  
+#' @export
+#' @rdname collect_parts   
 setGeneric("collect_parts", 
                     function(annotation, ...) {
                       standardGeneric("collect_parts")
@@ -35,6 +37,7 @@ setGeneric("collect_parts",
 )
 
 #' @export
+#' @rdname collect_parts  
 setMethod("collect_parts", 
                    signature = "GRanges",
                    function(annotation, ...) {
@@ -43,6 +46,7 @@ setMethod("collect_parts",
 
 
 #' @export
+#' @rdname collect_parts  
 setMethod("collect_parts", 
                    signature = "character",
                    function(annotation, ...) {
@@ -60,6 +64,7 @@ setMethod("collect_parts",
                    })
 
 #' @export
+#' @rdname collect_parts  
 setMethod("collect_parts", 
                    signature = "GFFFile",
                    function(annotation, ...) {
@@ -68,6 +73,7 @@ setMethod("collect_parts",
 
 
 #' @export
+#' @rdname collect_parts  
 setMethod("collect_parts", 
                    signature = "TxDb", 
                    function(annotation) {
@@ -91,12 +97,13 @@ setMethod("collect_parts",
   stopifnot(sum(names(mcols(annotation)) %in% c("gene_id", "type")) == 2L)
   
   # cast gene_id as Rle
-  annotation <- plyranges::mutate(annotation, gene_id = as(gene_id, "Rle"))
+  annotation <- plyranges::mutate(annotation, 
+                                  gene_id = methods::as(gene_id, "Rle"))
   
   # extract genes from annotation
   pc_genes <- plyranges::filter(annotation, type == "gene")   
   pc_genes <- plyranges::select(pc_genes, 
-                                dplyr::starts_with("gene"), 
+                                gene_id, gene_name, gene_biotype,  gene_source, 
                                 type, source) 
   pc_genes <- plyranges::arrange(pc_genes, gene_id)
   

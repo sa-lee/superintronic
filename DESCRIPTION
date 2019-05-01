@@ -1,6 +1,6 @@
 Package: superintronic
 Type: Package
-Title: Explore intron signal via coverage estimation in high-throughput data.
+Title: Tools for Working with Intron Signal
 Version: 0.99.0
 Authors@R: c(
     person("Stuart", "Lee", email = "lee.s@wehi.edu.au", role = c("aut", "cre")),
@@ -13,16 +13,20 @@ Description:
     user to quickly summarise any intron signal, and visualise the
     coverage regions with their gene context. 
 Imports: 
-  plyranges,
-  methods,
-  Rsamtools, 
-  S4Vectors, 
-  GenomicFeatures, 
-  rlang, 
-  BiocGenerics, 
-  GenomeInfoDb, 
-  ggplot2, 
-  patchwork
+    plyranges,
+    methods,
+    Rsamtools,
+    S4Vectors,
+    GenomicFeatures,
+    rlang,
+    BiocGenerics,
+    GenomeInfoDb,
+    ggplot2,
+    patchwork,
+    BiocParallel,
+    rtracklayer,
+    GenomicRanges,
+    IRanges
 Suggests: 
     BiocStyle,
     knitr,
@@ -32,3 +36,4 @@ License: Artistic-2.0
 Encoding: UTF-8
 RoxygenNote: 6.1.1
 VignetteBuilder: knitr
+Roxygen: list(markdown = TRUE)
