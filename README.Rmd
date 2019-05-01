@@ -65,6 +65,8 @@ features <- system.file("extdata",
                         package = "airway") %>% 
   collect_parts() %>% 
   filter(source == "protein_coding", n_olaps == 1)
+
+features
 ```
 
 

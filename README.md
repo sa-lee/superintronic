@@ -94,6 +94,31 @@ features <- system.file("extdata",
                         package = "airway") %>% 
   collect_parts() %>% 
   filter(source == "protein_coding", n_olaps == 1)
+
+features
+#> GRanges object with 3 ranges and 9 metadata columns:
+#>       seqnames            ranges strand |         gene_id   gene_name
+#>          <Rle>         <IRanges>  <Rle> |           <Rle> <character>
+#>   [1]        1 11114641-11120081      - | ENSG00000116649         SRM
+#>   [2]        1 11072414-11085796      + | ENSG00000120948      TARDBP
+#>   [3]        1 11006528-11042094      - | ENSG00000175262    C1orf127
+#>          gene_source   gene_biotype     type         source   n_olaps
+#>          <character>    <character> <factor>       <factor> <integer>
+#>   [1] ensembl_havana protein_coding     gene protein_coding         1
+#>   [2] ensembl_havana protein_coding     gene protein_coding         1
+#>   [3] ensembl_havana protein_coding     gene protein_coding         1
+#>                                                                exonic_parts
+#>                                                               <GRangesList>
+#>   [1] 1:11114641-11115261:-,1:11115838-11115983:-,1:11116068-11116151:-,...
+#>   [2] 1:11072414-11072485:+,1:11072699-11072800:+,1:11073773-11074022:+,...
+#>   [3] 1:11006528-11006798:-,1:11007700-11009871:-,1:11014076-11014199:-,...
+#>                                                              intronic_parts
+#>                                                               <GRangesList>
+#>   [1] 1:11115262-11115837:-,1:11115984-11116067:-,1:11116152-11116660:-,...
+#>   [2] 1:11072486-11072698:+,1:11072801-11073772:+,1:11074023-11075580:+,...
+#>   [3] 1:11006799-11007699:-,1:11009872-11014075:-,1:11014200-11015046:-,...
+#>   -------
+#>   seqinfo: 1 sequence from an unspecified genome; no seqlengths
 ```
 
 ## Computing coverage over BAM(s)
