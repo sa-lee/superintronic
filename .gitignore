@@ -4,3 +4,4 @@ data-raw/
 ^\.Rproj\.user$
 .Rproj.user/
 *.Rproj
+.Rproj.user

@@ -17,12 +17,16 @@ flatten <- function(x, type = "exon") {
 }
 
 #' @importFrom S4Vectors mcols<- mcols
-combine_exin <- function(x) {
+flatten_parts <- function(x) {
+  
+  has_exin_cols <- sum(names(mcols(x)) %in% c("exonic_parts", "intronic_parts")) == 2
+  if (!has_exin_cols) stop("Cannot find ")
+  
   exonic <- mcols(x)[["exonic_parts"]]
   features_exons <- unlist(exonic, use.names = FALSE) 
   mcols(features_exons) <- flatten(exonic)
   
-  intronic <- mcols(x)[["simple_intronic"]]
+  intronic <- mcols(x)[["intronic_parts"]]
   features_introns <- unlist(intronic, use.names = FALSE)
   mcols(features_introns) <- flatten(intronic, "intron")
   
@@ -31,14 +35,24 @@ combine_exin <- function(x) {
 }
 
 
-#' Restrict coverage over features
+#' @export
+flatten_merge <- function(x, parts) {
+  f <- flatten_parts(parts)
+  plyranges::join_overlap_intersect(x, f)
+}
+
+
+#' Nest by Overlapping Ranges 
 #' 
 #' 
-#' @param cvg a GRanges object from `gather_coverage()`
+#' @param ranges a GRanges object 
 #' @param features a GRanges object from `collect_parts()`
+#' @param key one or more columns to group ranges
+#' @param index one or more columns to group overlaps by
+#' 
 #' 
 #' @details This function restricts the coverage GRanges, `cvg` to the ranges
-#' that intersect the `exonic_parts` and `simple_intronic` ranges, the result
+#' that intersect the `exonic_parts` and `intronic_parts` ranges, the result
 #' is a GRanges object with additional columns: 
 #' 
 #' * `gene_id`, the gene_id from `features` corresponding to an exon/intron.
@@ -50,9 +64,16 @@ combine_exin <- function(x) {
 #' @return a GRanges object
 #' 
 #' @export
-merge_coverage <- function(cvg, features) {
-  f <- combine_exin(features)
-  join_overlap_intersect(cvg, f)
+nest_by_overlaps <- function(ranges, features, .key, .index) {
+  
+  .nest_vars <- rlang::quos(score = score, n_bases = width)
+  .groups <- rlang::quos(!!!.key, !!!.index)
+  
+  olap <- flatten_merge(ranges, features)
+  olap <- group_by(olap, !!!.groups)
+  
+  olap_reduced <- plyranges::reduce_ranges(olap, !!!.nest_vars)
+
 }
 
 

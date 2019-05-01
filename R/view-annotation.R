@@ -5,7 +5,7 @@
 #' @param color a column in data that represents a feature 
 #' 
 #' 
-#' @importFrom ggplot2 geom_segment aes scale_y_continuous scale_colour_brewer theme_bw theme guides scale_x_continuous expand_scale
+#' @importFrom ggplot2 geom_segment scale_x_reverse aes scale_y_continuous scale_colour_brewer theme_bw theme guides scale_x_continuous expand_scale
 #' @return a ggplot object
 #' @export
 view_segments <- function(data, color) {

@@ -39,28 +39,35 @@ We assume you are starting from a GTF/GFF file for your given organism.
 The reading of the GFF file is done external to this package, 
 and can be done via `rtracklayer::import` or `plyranges::read_gff`.
 The resulting GRanges is passed to `collect_parts()`, then you can use
-`plyranges::filter` to select the criteria for genes you're interested in.
+`plyranges::filter()` to select the criteria for genes you're interested in.
 
-Note that `collect_parts()` is a generic and dispatches on the following
-annotation objects:
+Alternatively, since `collect_parts()` is a generic we can also start
+from any of the following objects:
 
-* character representing a file path
-* GFF/GTFFile
-* TxDb
-* EnsDb
+* character vector containing a path to GFF file
+* GFF/GTFFile class from `rtracklayer`
+* TxDb and related Bioconductor
+
+`collect_parts()` computes a `GRanges` with number of rows equal to genes,
+it only considers intronic/exonic parts linked to a single gene only.
 
 The result is a GRanges object with number of rows equal to genes,
-and columns containing the intronic and exonic features (as list columns). 
-```{r eval = FALSE}
+and columns containing the intronic and exonic features (as list columns)
+and the number of times a gene overlaps anyother feature (as well as
+any associated information from the gtf file). 
+```{r eval = TRUE}
 library(superintronic)
 library(magrittr)
+library(plyranges)
 
-gff <- "my.gff"
-
-features <- gff %>% 
-  plyranges::read_gff() %>% 
-  collect_parts() 
+features <- system.file("extdata", 
+                        "Homo_sapiens.GRCh37.75_subset.gtf", 
+                        package = "airway") %>% 
+  collect_parts() %>% 
+  filter(source == "protein_coding", n_olaps == 1)
 ```
+
+
 
 ## Computing coverage over BAM(s)
 
@@ -71,34 +78,39 @@ a set of BAM files. We have structured it so you specify a data frame,
 (like you would get from targets in `limma`), that contains a column
 identified by `source`, that specifies the BAM file names. Other options
 include specifying a GRanges that represents the genome build, an optional
-target GRanges for restricting coverage, and `BPPARAM` obejct for perfoming
-parallel computations.
+target GRanges for restricting coverage (requiring the BAM to be indexed),
+an argument for dropping entire regions that have zero coverage, and an
+argumet for  parallel computations.
 
 ```{r, eval = FALSE}
-# is generic - should be able to dispatch on just the names of a BAM file too
+# signature (dispatch on spec and source)
 compute_coverage_long(spec,
                       source,
-                      .target = GenomicRanges::GRanges(),
-                      .genome_info,
+                      .target = NULL,
+                      .genome_info = NULL,
+                      .drop_empty = TRUE
                       .parallel = BiocParallel::bpparam()
                       )
 ```
 
 This function automatically propagates, the metadata associated
-with a design onto the resulting GRanges 
+with a design onto the resulting GRanges, however a user may also just
+provide a vector of BAM files and then add any relevant design variables later
+with `join_design()`.
 
 As an example, let's use BAM files from the 
 [`airway`](https://bioconductor.org/packages/release/data/experiment/html/airway.html)
 data package.  
 
-```{r, eval = FALSE}
+```{r, eval = TRUE}
 design <- read.csv(system.file("extdata", 
                                "sample_table.csv", 
-                               package = "airway"),
-                   )
-design$bam <- dir(system.file("extdata", package = "airway"), 
-                  pattern = "*.bam",
-                  full.names = TRUE)
+                               package = "airway")) %>% 
+  dplyr::select(sample_id = X, cell, dex, albut) %>% 
+  dplyr::mutate(bam = dir(system.file("extdata", package = "airway"), 
+                          pattern = "*.bam",
+                          full.names = TRUE)
+  )
 
 cvg <- compute_coverage_long(design, source = "bam")
 cvg
@@ -109,18 +121,21 @@ Once the coverage is in long form, we can then merge overlapping genomic
 features over the experimental design via an intersect overlap join and nesting
 over the union ranges of an index  index (usually gene_id).
 
-```{r, eval = FALSE}
-cvg_over_features <- nest_by_targets(cvg,
-                                  target, 
-                                  key = SampleName,
-                                  range_index = gene_id
-                                  )
+```{r, eval = TRUE}
+cvg_over_features <- nest_by_overlaps(cvg,
+                                      features, 
+                                      .key = dplyr::vars(sample_id),
+                                      .index = dplyr::vars(gene_id)
+)
+
+cvg_over_features
 ```
 
 
 ### Computing coverage wide form 
 
-Returns a `RaggedExperiment` object (useful for doing things like PCA etc.)
+Returns a `RaggedExperiment` object (useful for doing things like PCA, CCA
+more of a bioconductor approach etc.)
 
 ```{r, eval = FALSE}
 compute_coverage_wide(design,
@@ -133,10 +148,10 @@ compute_coverage_wide(design,
 
 
 
-## Coverage diagnostics 
+## Rangewise diagnostics 
 
-We can then compute a bunch of `covnostics`,
-over a given index accross a column representing the coverage score.
+We can then compute a bunch of `rangostics` (name TBD),
+over a given (key and index) accross a column representing the coverage score.
 
 * mean
 * min, median, max
@@ -144,19 +159,24 @@ over a given index accross a column representing the coverage score.
 * variance
 * variance_shift
 * bases_above_score
-* near_feature_covnostic
+* near_feature_*covnostic*
 
-This is conceptually similar to `dplyr::summarise_at` 
+
+This is conceptually similar to `dplyr::mutate_at` 
 ```{r, eval=FALSE}
-covnostics(cvg_over_features, y = score, .funs, ...)
+rangostics(cvg_over_features, y = score, wt = width, .funs, ...)
 ```
 
 ## Visualising coverage scores
 
 Options for visualising coverage over a given range 
-```{r, eval = FALSE}
-view_coverage(cvg, target)
+```{r, eval = TRUE}
+
+flatten_merge(cvg, features) %>% 
+  view_coverage(., filter(features, gene_id == "ENSG00000116649"))
 ```
 
 This returns a regular old ggplot object, so segments can be overlaid with
 by adding to the plot object.
+
+

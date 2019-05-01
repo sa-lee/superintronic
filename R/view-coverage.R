@@ -13,15 +13,15 @@
 view_coverage <- function(cvg, target, hline = NULL, facets = ggplot2::vars()) {
   
   annotation <- bind_ranges(
-    exon = unlist(target$simple_exonic, use.names = FALSE),
-    intron = unlist(target$simple_intronic, use.names = FALSE),
+    exon = unlist(target$exonic_parts, use.names = FALSE),
+    intron = unlist(target$intronic_parts, use.names = FALSE),
     .id = "feature"
   )
   
   annotation_tracks <- view_segments(annotation, color = feature)
   
-  coverage_view <- plyranges::filter(cvg, gene_id == target$gene_id)
-  coverage_view <- plyranges::mutate(coverage_view, strand == feature_strand)
+  coverage_view <- plyranges::filter_by_overlaps(cvg, target)
+  coverage_view <- plyranges::mutate(coverage_view, strand = feature_strand)
 
   if (length(facets) > 0L) {
     coverage_view <- plyranges::group_by(coverage_view, !!!facets)
