@@ -23,7 +23,11 @@ Imports:
   GenomeInfoDb, 
   ggplot2, 
   patchwork
-Suggests: BiocStyle, knitr, rmarkdown
+Suggests: 
+    BiocStyle,
+    knitr,
+    rmarkdown,
+    testthat
 License: Artistic-2.0
 Encoding: UTF-8
 RoxygenNote: 6.1.1
