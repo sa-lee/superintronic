@@ -18,7 +18,7 @@
 #' for each gene. This is simply defined as the parallel set difference betweeen
 #' the gene ranges and the exonic ranges.
 #' * `n_olaps`: the integer count of the number times a gene overlaps
-#' any other gene.
+#' any other gene in the annotation.
 #' 
 #' @examples 
 #' gtf <- system.file("extdata", "Homo_sapiens.GRCh37.75_subset.gtf", package = "airway")

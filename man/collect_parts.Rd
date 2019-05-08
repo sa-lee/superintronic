@@ -46,7 +46,7 @@ case of a TxDb object, this is obtained by \code{GenomicFeatures::exonBy}.
 for each gene. This is simply defined as the parallel set difference betweeen
 the gene ranges and the exonic ranges.
 \item \code{n_olaps}: the integer count of the number times a gene overlaps
-any other gene.
+any other gene in the annotation.
 }
 }
 \examples{
