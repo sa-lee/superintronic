@@ -2,7 +2,7 @@
 #' 
 #' @param spec a `data.frame` containing an experimental design
 #' @param source a column in the data identifying the name of BAM files
-#' @param .target an optional GRanges object (default = NULL) to compute coverage
+#' @param .which an optional GRanges object (default = NULL) to compute coverage
 #' over a region (requires the BAM file to be indexed).
 #' @param .genome_info a GRanges object containing reference annotation (default = NULL)
 #' @param .drop_empty Filter ranges if they have zero coverage over an entire contig/chromosome (default TRUE)
@@ -27,7 +27,7 @@
 #' @rdname compute_coverage_long
 setGeneric("compute_coverage_long",
                     signature = c("spec", "source"),
-                    function(spec, source, .target = NULL, .genome_info = NULL, .drop_empty = TRUE, .parallel = BiocParallel::bpparam()) {
+                    function(spec, source, .which = NULL, .genome_info = NULL, .drop_empty = TRUE, .parallel = BiocParallel::bpparam()) {
                       standardGeneric("compute_coverage_long")
                     })
 
@@ -36,21 +36,21 @@ setGeneric("compute_coverage_long",
 #'@rdname compute_coverage_long 
 setMethod("compute_coverage_long", 
                    signature = c("character", "missing"),
-                   function(spec, source, .target = NULL, .genome_info = NULL, .drop_empty = TRUE, .parallel = BiocParallel::bpparam()) {
+                   function(spec, source, .which = NULL, .genome_info = NULL, .drop_empty = TRUE, .parallel = BiocParallel::bpparam()) {
                      bfl <- BamFileList(spec)
-                     .bamlist_coverage(bfl, .target, .genome_info, .parallel)
+                     .bamlist_coverage(bfl, .which, .genome_info, .drop_empty, .parallel)
                    })
 
 #'@export 
 #'@rdname compute_coverage_long
 setMethod("compute_coverage_long",
                    signature = c("DataFrame", "character"),
-                   function(spec, source, .target = NULL, .genome_info = NULL, .drop_empty = TRUE, .parallel = BiocParallel::bpparam()) {
-                     bfl <- BamFileList(spec[[source]])
+                   function(spec, source, .which = NULL, .genome_info = NULL, .drop_empty = TRUE, .parallel = BiocParallel::bpparam()) {
+                     bfl <- BamFileList(as.character(spec[[source]]))
                      spec[[source]] <- as(spec[[source]], "Rle")
                      S4Vectors::mcols(bfl) <- spec
                      ans <- .bamlist_coverage(bfl, 
-                                              .target, 
+                                              .which, 
                                               .genome_info, 
                                               .drop_empty, 
                                               .parallel)
@@ -61,11 +61,11 @@ setMethod("compute_coverage_long",
 #'@rdname compute_coverage_long
 setMethod("compute_coverage_long",
                    signature = c("data.frame", "character"), 
-                   function(spec, source, .target = NULL, .genome_info = NULL, .drop_empty = TRUE, .parallel = BiocParallel::bpparam()) {
+                   function(spec, source, .which = NULL, .genome_info = NULL, .drop_empty = TRUE, .parallel = BiocParallel::bpparam()) {
                      spec <- methods::as(spec, "DataFrame")
                      compute_coverage_long(spec, 
                                            source, 
-                                           .target, 
+                                           .which, 
                                            .genome_info, 
                                            .drop_empty, 
                                            .parallel)
@@ -73,12 +73,12 @@ setMethod("compute_coverage_long",
 )
 
 # work horse function
-.bamlist_coverage <- function(bfl, .target, .genome_info, .drop_empty, .parallel) {
+.bamlist_coverage <- function(bfl, .which, .genome_info, .drop_empty, .parallel) {
   
   sb <- Rsamtools::ScanBamParam()
-  
-  if (!is.null(.target)) {
-    sb <- Rsamtools::ScanBamParam(which = .target)
+
+  if (!is.null(.which)) {
+    sb <- Rsamtools::ScanBamParam(which = .which)
   }
   
   cvg  <- BiocParallel::bplapply(

@@ -8,20 +8,19 @@
 \alias{compute_coverage_long,data.frame,character-method}
 \title{Compute long-form coverage as a GRanges object}
 \usage{
-compute_coverage_long(spec, source, .target = NULL,
-  .genome_info = NULL, .drop_empty = TRUE,
-  .parallel = BiocParallel::bpparam())
+compute_coverage_long(spec, source, .which = NULL, .genome_info = NULL,
+  .drop_empty = TRUE, .parallel = BiocParallel::bpparam())
 
 \S4method{compute_coverage_long}{character,missing}(spec, source,
-  .target = NULL, .genome_info = NULL, .drop_empty = TRUE,
+  .which = NULL, .genome_info = NULL, .drop_empty = TRUE,
   .parallel = BiocParallel::bpparam())
 
 \S4method{compute_coverage_long}{DataFrame,character}(spec, source,
-  .target = NULL, .genome_info = NULL, .drop_empty = TRUE,
+  .which = NULL, .genome_info = NULL, .drop_empty = TRUE,
   .parallel = BiocParallel::bpparam())
 
 \S4method{compute_coverage_long}{data.frame,character}(spec, source,
-  .target = NULL, .genome_info = NULL, .drop_empty = TRUE,
+  .which = NULL, .genome_info = NULL, .drop_empty = TRUE,
   .parallel = BiocParallel::bpparam())
 }
 \arguments{
@@ -29,7 +28,7 @@ compute_coverage_long(spec, source, .target = NULL,
 
 \item{source}{a column in the data identifying the name of BAM files}
 
-\item{.target}{an optional GRanges object (default = NULL) to compute coverage
+\item{.which}{an optional GRanges object (default = NULL) to compute coverage
 over a region (requires the BAM file to be indexed).}
 
 \item{.genome_info}{a GRanges object containing reference annotation (default = NULL)}
