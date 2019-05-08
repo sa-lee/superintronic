@@ -1,7 +1,7 @@
 #' @importFrom BiocGenerics width strand
 flatten <- function(x, type = "exon") {
   type <- match.arg(type, choices =c("exon", "intron"))
-  n_features_in_genes <- BiocGenerics::lengths(x)
+  n_features_in_genes <- lengths(x)
   gene_id <- S4Vectors::Rle(names(x), n_features_in_genes)
   feature_type <- S4Vectors::Rle(
     factor(type,levels = c("exon", "intron")), 
@@ -41,7 +41,7 @@ flatten_parts <- function(x) {
 #' @param parts an annotation GRanges from `collect_parts()`
 #' 
 #' @export
-flatten_merge <- function(x, parts) {
+join_parts <- function(x, parts) {
   f <- flatten_parts(parts)
   plyranges::join_overlap_intersect(x, f)
 }
@@ -74,7 +74,7 @@ nest_by_overlaps <- function(ranges, features, .key, .index) {
   .nest_vars <- rlang::quos(score = score, n_bases = width)
   .groups <- rlang::quos(!!!.key, !!!.index)
   
-  olap <- flatten_merge(ranges, features)
+  olap <- join_parts(ranges, features)
   olap <- group_by(olap, !!!.groups)
   
   olap_reduced <- plyranges::reduce_ranges(olap, !!!.nest_vars)
