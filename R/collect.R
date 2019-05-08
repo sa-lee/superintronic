@@ -103,7 +103,7 @@ setMethod("collect_parts",
   # extract genes from annotation
   pc_genes <- plyranges::filter(annotation, type == "gene")   
   pc_genes <- plyranges::select(pc_genes, 
-                                gene_id, gene_name, gene_biotype,  gene_source, 
+                                dplyr::starts_with("gene"), 
                                 type, source) 
   pc_genes <- plyranges::arrange(pc_genes, gene_id)
   

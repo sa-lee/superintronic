@@ -26,7 +26,8 @@ Imports:
     BiocParallel,
     rtracklayer,
     GenomicRanges,
-    IRanges
+    IRanges,
+    dplyr
 Suggests: 
     BiocStyle,
     knitr,
