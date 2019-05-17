@@ -80,6 +80,3 @@ nest_by_overlaps <- function(ranges, features, .key, .index) {
   olap_reduced <- plyranges::reduce_ranges(olap, !!!.nest_vars)
   olap_reduced
 }
-
-
-
