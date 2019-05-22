@@ -1,4 +1,4 @@
-#' Compute diagnoistics over Ranges (rangnostics)
+#' Compute diagnoistics over Ranges (rangenostics)
 #' 
 #' @param ranges a GRanges object 
 #' @param .var A column in `ranges` defining an index
