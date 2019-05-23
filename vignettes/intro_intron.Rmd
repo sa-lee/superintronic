@@ -1,0 +1,19 @@
+---
+title: "intro_intron"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{intro_intron}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(superintronic)
+```
