@@ -28,11 +28,18 @@ after_script: R -q -e 'tic::after_script()'
 # Custom parts:
 
 # Header
+# Header
 language: r
 sudo: false
 dist: trusty
 cache: packages
 latex: false
+
+# bioc check
+r: bioc-devel
+bioc_check: true
+
+warnings_are_errors: false
 
 #env
 env:

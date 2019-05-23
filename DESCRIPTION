@@ -22,17 +22,17 @@ Imports:
     BiocGenerics,
     GenomeInfoDb,
     ggplot2,
-    patchwork,
     BiocParallel,
     rtracklayer,
     GenomicRanges,
     IRanges,
     dplyr
 Suggests: 
-    BiocStyle,
     knitr,
     rmarkdown,
     testthat
+Remotes:
+    thomasp85/patchwork
 License: Artistic-2.0
 Encoding: UTF-8
 RoxygenNote: 6.1.1

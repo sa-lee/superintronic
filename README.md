@@ -4,6 +4,12 @@
 # superintronic
 
 [![lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
+[![Build
+Status](https://travis-ci.org/sa-lee/superintronic.svg?branch=master)](https://travis-ci.org/sa-lee/superintronic)
+[![AppVeyor Build
+Status](https://ci.appveyor.com/api/projects/status/github/sa-lee/superintronic?branch=master&svg=true)](https://ci.appveyor.com/project/sa-lee/superintronic)
+[![Codecov test
+coverage](https://codecov.io/gh/sa-lee/superintronic/branch/master/graph/badge.svg)](https://codecov.io/gh/sa-lee/superintronic?branch=master)
 
 Exploring coverage signal in high-throughput (RNA) sequencing data via
 coverage estimation.
@@ -49,6 +55,11 @@ associated information from the gtf file).
 
 ``` r
 library(superintronic)
+#> Registered S3 methods overwritten by 'ggplot2':
+#>   method         from 
+#>   [.quosures     rlang
+#>   c.quosures     rlang
+#>   print.quosures rlang
 library(magrittr)
 library(plyranges)
 #> Loading required package: BiocGenerics
@@ -66,13 +77,12 @@ library(plyranges)
 #> The following objects are masked from 'package:base':
 #> 
 #>     anyDuplicated, append, as.data.frame, basename, cbind,
-#>     colMeans, colnames, colSums, dirname, do.call, duplicated,
-#>     eval, evalq, Filter, Find, get, grep, grepl, intersect,
-#>     is.unsorted, lapply, lengths, Map, mapply, match, mget, order,
-#>     paste, pmax, pmax.int, pmin, pmin.int, Position, rank, rbind,
-#>     Reduce, rowMeans, rownames, rowSums, sapply, setdiff, sort,
-#>     table, tapply, union, unique, unsplit, which, which.max,
-#>     which.min
+#>     colnames, dirname, do.call, duplicated, eval, evalq, Filter,
+#>     Find, get, grep, grepl, intersect, is.unsorted, lapply, Map,
+#>     mapply, match, mget, order, paste, pmax, pmax.int, pmin,
+#>     pmin.int, Position, rank, rbind, Reduce, rownames, sapply,
+#>     setdiff, sort, table, tapply, union, unique, unsplit, which,
+#>     which.max, which.min
 #> Loading required package: IRanges
 #> Loading required package: S4Vectors
 #> Loading required package: stats4
@@ -195,17 +205,17 @@ cvg
 #>   [98561]      trt    untrt
 #>                                                                                                           bam
 #>                                                                                                         <Rle>
-#>       [1] /Library/Frameworks/R.framework/Versions/3.5/Resources/library/airway/extdata/SRR1039508_subset.bam
-#>       [2] /Library/Frameworks/R.framework/Versions/3.5/Resources/library/airway/extdata/SRR1039508_subset.bam
-#>       [3] /Library/Frameworks/R.framework/Versions/3.5/Resources/library/airway/extdata/SRR1039508_subset.bam
-#>       [4] /Library/Frameworks/R.framework/Versions/3.5/Resources/library/airway/extdata/SRR1039508_subset.bam
-#>       [5] /Library/Frameworks/R.framework/Versions/3.5/Resources/library/airway/extdata/SRR1039508_subset.bam
+#>       [1] /Library/Frameworks/R.framework/Versions/3.6/Resources/library/airway/extdata/SRR1039508_subset.bam
+#>       [2] /Library/Frameworks/R.framework/Versions/3.6/Resources/library/airway/extdata/SRR1039508_subset.bam
+#>       [3] /Library/Frameworks/R.framework/Versions/3.6/Resources/library/airway/extdata/SRR1039508_subset.bam
+#>       [4] /Library/Frameworks/R.framework/Versions/3.6/Resources/library/airway/extdata/SRR1039508_subset.bam
+#>       [5] /Library/Frameworks/R.framework/Versions/3.6/Resources/library/airway/extdata/SRR1039508_subset.bam
 #>       ...                                                                                                 ...
-#>   [98557] /Library/Frameworks/R.framework/Versions/3.5/Resources/library/airway/extdata/SRR1039521_subset.bam
-#>   [98558] /Library/Frameworks/R.framework/Versions/3.5/Resources/library/airway/extdata/SRR1039521_subset.bam
-#>   [98559] /Library/Frameworks/R.framework/Versions/3.5/Resources/library/airway/extdata/SRR1039521_subset.bam
-#>   [98560] /Library/Frameworks/R.framework/Versions/3.5/Resources/library/airway/extdata/SRR1039521_subset.bam
-#>   [98561] /Library/Frameworks/R.framework/Versions/3.5/Resources/library/airway/extdata/SRR1039521_subset.bam
+#>   [98557] /Library/Frameworks/R.framework/Versions/3.6/Resources/library/airway/extdata/SRR1039521_subset.bam
+#>   [98558] /Library/Frameworks/R.framework/Versions/3.6/Resources/library/airway/extdata/SRR1039521_subset.bam
+#>   [98559] /Library/Frameworks/R.framework/Versions/3.6/Resources/library/airway/extdata/SRR1039521_subset.bam
+#>   [98560] /Library/Frameworks/R.framework/Versions/3.6/Resources/library/airway/extdata/SRR1039521_subset.bam
+#>   [98561] /Library/Frameworks/R.framework/Versions/3.6/Resources/library/airway/extdata/SRR1039521_subset.bam
 #>               score
 #>           <integer>
 #>       [1]         0
@@ -299,7 +309,7 @@ over genomic windows.
 This is conceptually similar to `dplyr::summarise_at`
 
 ``` r
-rangostics(cvg_over_features, y = score, wt = width, .funs, ...)
+rango(cvg_over_features, y = score, wt = width, .funs, ...)
 ```
 
 ## Visualising coverage scores
@@ -307,7 +317,7 @@ rangostics(cvg_over_features, y = score, wt = width, .funs, ...)
 Options for visualising coverage over a given range
 
 ``` r
-cvg_over_features <- flatten_merge(cvg, features) 
+cvg_over_features <- join_parts(cvg, features) 
 
 cvg_over_features %>% 
   view_coverage(., filter(features, gene_id == "ENSG00000116649"))

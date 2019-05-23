@@ -16,6 +16,10 @@ knitr::opts_chunk$set(
 # superintronic
 
 [![lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
+[![Build Status](https://travis-ci.org/sa-lee/superintronic.svg?branch=master)](https://travis-ci.org/sa-lee/superintronic)
+[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/sa-lee/superintronic?branch=master&svg=true)](https://ci.appveyor.com/project/sa-lee/superintronic)
+[![Codecov test coverage](https://codecov.io/gh/sa-lee/superintronic/branch/master/graph/badge.svg)](https://codecov.io/gh/sa-lee/superintronic?branch=master)
+
 
 Exploring coverage signal in high-throughput 
 (RNA) sequencing data via coverage estimation.
@@ -175,7 +179,7 @@ rango(cvg_over_features, y = score, wt = width, .funs, ...)
 
 Options for visualising coverage over a given range 
 ```{r, eval = TRUE}
-cvg_over_features <- flatten_merge(cvg, features) 
+cvg_over_features <- join_parts(cvg, features) 
 
 cvg_over_features %>% 
   view_coverage(., filter(features, gene_id == "ENSG00000116649"))
