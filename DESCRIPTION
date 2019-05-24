@@ -30,7 +30,8 @@ Imports:
 Suggests: 
     knitr,
     rmarkdown,
-    testthat (>= 2.1.0)
+    testthat (>= 2.1.0),
+    magrittr
 Remotes:
     thomasp85/patchwork
 License: Artistic-2.0
@@ -38,3 +39,5 @@ Encoding: UTF-8
 RoxygenNote: 6.1.1
 VignetteBuilder: knitr
 Roxygen: list(markdown = TRUE)
+URL: https://github.com/sa-lee/superintronic
+BugReports: https://github.com/sa-lee/superintronic/issues

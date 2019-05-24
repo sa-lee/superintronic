@@ -156,21 +156,23 @@ compute_coverage_wide(design,
 
 ## Rangewise diagnostics 
 
-We can then compute a bunch of `rangostics` (name TBD),
+We can then compute a bunch of `rangenostics` 
 over a given (key and index) accross a column representing the coverage score.
 
 * mean
 * min, median, max
 * quantile
 * variance
-* variance_shift
-* bases_above_score
+* max_variance_shift
+* sum_if
+* lumpiness
+* stability
+* peakiness
 * near_feature_*covnostic*
 
 Includes functions for purrr like mapping for sliding/tiling/stretching
-over genomic windows.
+over genomic windows (using Bioconductor's Views infrastructure).
 
-This is conceptually similar to `dplyr::summarise_at` 
 ```{r, eval=FALSE}
 rango(cvg_over_features, y = score, wt = width, .funs, ...)
 ```
