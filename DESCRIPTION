@@ -30,7 +30,7 @@ Imports:
 Suggests: 
     knitr,
     rmarkdown,
-    testthat
+    testthat (>= 2.1.0)
 Remotes:
     thomasp85/patchwork
 License: Artistic-2.0
