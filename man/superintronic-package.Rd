@@ -11,6 +11,14 @@ superintronic stimates coverage over intronic/exonic regions within
     user to quickly summarise any intron signal, and visualise the
     coverage regions with their gene context.
 }
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/sa-lee/superintronic}
+  \item Report bugs at \url{https://github.com/sa-lee/superintronic/issues}
+}
+
+}
 \author{
 \strong{Maintainer}: Stuart Lee \email{lee.s@wehi.edu.au}
 
