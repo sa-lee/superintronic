@@ -9,7 +9,10 @@ knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
   fig.path = "man/figures/README-",
-  out.width = "100%"
+  out.width = "100%",
+  warnings = FALSE,
+  error = FALSE,
+  message = FALSE
 )
 
 ```
@@ -21,94 +24,65 @@ knitr::opts_chunk$set(
 [![Codecov test coverage](https://codecov.io/gh/sa-lee/superintronic/branch/master/graph/badge.svg)](https://codecov.io/gh/sa-lee/superintronic?branch=master)
 
 
-Exploring coverage signal in high-throughput 
+Exploring signal in high-throughput 
 (RNA) sequencing data via coverage estimation.
 
-_superintronic_ centers around exploring coverage over exonic and intronic
+_superintronic_ centers around exploring coverage over genomic
 regions via computing simple summary statistics and visualisations. 
 The aim is to provide an extremely modular worklfow via an interface built on top of the 
 [_plyranges_](https://sa-lee.github.io/plyranges/index.html) package. 
 This means that you can modify any of the steps provided 
 with the _plyranges_ grammar or just use our defaults.
 
+
+
+## Quick start 
+
+Often, as quality control check in sequencing analysis you would like
+to visualise coverage within each sample over the exon/intron parts of 
+gene of interest.  This is simple with superintronic! 
+
+As an example, we will use the sample
+BAM files from the  [`airway`](https://bioconductor.org/packages/release/data/experiment/html/airway.html) data package in Bioconductor and our target gene is _SRM_  
+
 The basic workflow consists of three steps  
 
-1. Setting up annotations
+1. Setting up your gene region of interest 
 2. Computing coverage
 3. Visualising coverage results
 
-## Setting up annotation GRanges
+(_Note that we are considering a single gene for illustrative purposes
+and in principle you can look at coverage over any genomic region you're 
+interested in!_)
 
-We assume you are starting from a GTF/GFF file for your given organism. 
-The reading of the GFF file is done external to this package, 
-and can be done via `rtracklayer::import` or `plyranges::read_gff`.
-The resulting GRanges is passed to `collect_parts()`, then you can use
-`plyranges::filter()` to select the criteria for genes you're interested in.
+### 1. Setting up annotation GRanges
 
-Alternatively, since `collect_parts()` is a generic we can also start
-from any of the following objects:
+You can start from a GTF/GFF file for your given organism and `collect_parts()`
+to gather up the intronic/exonic regions for each gene. You can then use the
+_plyranges_ grammar to select your target gene.
 
-* character vector containing a path to GFF file
-* GFF/GTFFile class from `rtracklayer`
-* TxDb and related Bioconductor
-
-`collect_parts()` computes a `GRanges` with number of rows equal to genes,
-it only considers intronic/exonic parts linked to a single gene only.
-
-The result is a GRanges object with number of rows equal to genes,
-and columns containing the intronic and exonic features (as list columns)
-and the number of times a gene overlaps anyother feature (as well as
-any associated information from the gtf file). 
-```{r eval = TRUE}
+```{r parts, eval = TRUE}
 library(superintronic)
-library(magrittr)
-library(plyranges)
+suppressPackageStartupMessages(library(plyranges))
 
 features <- system.file("extdata", 
                         "Homo_sapiens.GRCh37.75_subset.gtf", 
                         package = "airway") %>% 
   collect_parts() %>% 
-  filter(source == "protein_coding", n_olaps == 1)
+  filter(gene_name == "SRM")
 
 features
 ```
 
 
+### 2. Computing coverage over samples
 
-## Computing coverage over BAM(s)
+You can compute a long form GRanges containing coverage scores in parallel over
+a set of BAM files. All you need to begin is a character vector containing
+the path the BAM files or a `data.frame` representing the experimental design
+that contains a column of BAM files.
 
-### Making coverage scores into a tidy GRanges
-
-Here we compute a long form GRanges containing coverage scores in parallel over
-a set of BAM files. We have structured it so you specify a data frame,
-(like you would get from targets in `limma`), that contains a column
-identified by `source`, that specifies the BAM file names. Other options
-include specifying a GRanges that represents the genome build, an optional
-target GRanges for restricting coverage (requiring the BAM to be indexed),
-an argument for dropping entire regions that have zero coverage, and an
-argumet for  parallel computations.
-
-```{r, eval = FALSE}
-# signature (dispatch on spec and source)
-compute_coverage_long(spec,
-                      source,
-                      .target = NULL,
-                      .genome_info = NULL,
-                      .drop_empty = TRUE
-                      .parallel = BiocParallel::bpparam()
-                      )
-```
-
-This function automatically propagates, the metadata associated
-with a design onto the resulting GRanges, however a user may also just
-provide a vector of BAM files and then add any relevant design variables later
-with `join_design()`.
-
-As an example, let's use BAM files from the 
-[`airway`](https://bioconductor.org/packages/release/data/experiment/html/airway.html)
-data package.  
-
-```{r, eval = TRUE}
+```{r design, eval = TRUE}
 design <- read.csv(system.file("extdata", 
                                "sample_table.csv", 
                                package = "airway")) %>% 
@@ -119,79 +93,54 @@ design <- read.csv(system.file("extdata",
   )
 
 cvg <- compute_coverage_long(design, source = "bam")
-cvg
+
+cvg 
 ```
 
+This function automatically propagates, the metadata associated
+with a design onto the resulting GRanges. You can speed up this computation
+if your BAM files are indexed by providing a target GRanges so coverage 
+will be restricted to that set of ranges only.
 
-Once the coverage is in long form, we can then merge overlapping genomic
-features over the experimental design via an intersect overlap join and nesting
-over the union ranges of an index  index (usually gene_id).
+Once the coverage has been computed as a GRanges object, 
+we can then intercet overlapping gene parts (from `collect_parts()`) 
 
-```{r, eval = TRUE}
-cvg_over_features <- nest_by_overlaps(cvg,
-                                      features, 
-                                      .key = dplyr::vars(sample_id),
-                                      .index = dplyr::vars(gene_id)
-)
-
+```{r join, eval = TRUE}
+cvg_over_features <- cvg %>% 
+  select(-bam) %>% 
+  join_parts(features)
 cvg_over_features
 ```
 
+Further summaries can then be computed using rangewise diagnostics,
+see the `rango()` function for details.
 
-### Computing coverage wide form 
+### 3. Visualising coverage scores
 
-Returns a `RaggedExperiment` object (useful for doing things like PCA, CCA
-more of a bioconductor approach etc.)
+Coverage over a gene or a genomic region can be constructed via
+the `view_coverage()` function. The coverage score is disjoined
+and aggregated over all samples that overlaps the target region:
 
-```{r, eval = FALSE}
-compute_coverage_wide(design,
-                      source,
-                      .target = GenomicRanges::GRanges(),
-                      .genome_info,
-                      .parallel = BiocParallel::bpparam()
-                      )
+```{r cov-01, eval = TRUE}
+view_coverage(cvg_over_features, features)
+```
+
+By default, the coverage is aligned from the 5' to the 3' end of the target
+region, and exon regions are coloured green and intron parts are colour orange. 
+The function returns a ggplot object, so extra annotations or layers can be added
+via the `ggplot2` library. 
+
+
+Coverage scores can also be facetted if additional 
+experimental design information has been added. For example, we can split the
+coverage by each sample or treatment group or cell type
+
+
+```{r cov-02}
+view_coverage(cvg_over_features, features, facets = "cell")
 ```
 
 
+## Learning more
 
-## Rangewise diagnostics 
-
-We can then compute a bunch of `rangenostics` 
-over a given (key and index) accross a column representing the coverage score.
-
-* mean
-* min, median, max
-* quantile
-* variance
-* max_variance_shift
-* sum_if
-* lumpiness
-* stability
-* peakiness
-* near_feature_*covnostic*
-
-Includes functions for purrr like mapping for sliding/tiling/stretching
-over genomic windows (using Bioconductor's Views infrastructure).
-
-```{r, eval=FALSE}
-rango(cvg_over_features, y = score, wt = width, .funs, ...)
-```
-
-## Visualising coverage scores
-
-Options for visualising coverage over a given range 
-```{r, eval = TRUE}
-cvg_over_features <- join_parts(cvg, features) 
-
-cvg_over_features %>% 
-  view_coverage(., filter(features, gene_id == "ENSG00000116649"))
-
-cvg_over_features %>% 
-  view_coverage(., filter(features, gene_id == "ENSG00000116649"),
-                facets = dplyr::vars(dex))
-```
-
-This returns a regular old ggplot object, so segments can be overlaid with
-by adding to the plot object.
-
-
+For more advanced uses of the package see the vignette.

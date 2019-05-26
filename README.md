@@ -11,158 +11,77 @@ Status](https://ci.appveyor.com/api/projects/status/github/sa-lee/superintronic?
 [![Codecov test
 coverage](https://codecov.io/gh/sa-lee/superintronic/branch/master/graph/badge.svg)](https://codecov.io/gh/sa-lee/superintronic?branch=master)
 
-Exploring coverage signal in high-throughput (RNA) sequencing data via
-coverage estimation.
+Exploring signal in high-throughput (RNA) sequencing data via coverage
+estimation.
 
-*superintronic* centers around exploring coverage over exonic and
-intronic regions via computing simple summary statistics and
-visualisations. The aim is to provide an extremely modular worklfow via
-an interface built on top of the
-[*plyranges*](https://sa-lee.github.io/plyranges/index.html) package.
-This means that you can modify any of the steps provided with the
-*plyranges* grammar or just use our defaults.
+*superintronic* centers around exploring coverage over genomic regions
+via computing simple summary statistics and visualisations. The aim is
+to provide an extremely modular worklfow via an interface built on top
+of the [*plyranges*](https://sa-lee.github.io/plyranges/index.html)
+package. This means that you can modify any of the steps provided with
+the *plyranges* grammar or just use our defaults.
+
+## Quick start
+
+Often, as quality control check in sequencing analysis you would like to
+visualise coverage within each sample over the exon/intron parts of gene
+of interest. This is simple with superintronic\!
+
+As an example, we will use the sample BAM files from the
+[`airway`](https://bioconductor.org/packages/release/data/experiment/html/airway.html)
+data package in Bioconductor and our target gene is *SRM*
 
 The basic workflow consists of three steps
 
-1.  Setting up annotations
+1.  Setting up your gene region of interest
 2.  Computing coverage
 3.  Visualising coverage results
 
-## Setting up annotation GRanges
+(*Note that we are considering a single gene for illustrative purposes
+and in principle you can look at coverage over any genomic region you’re
+interested in\!*)
 
-We assume you are starting from a GTF/GFF file for your given organism.
-The reading of the GFF file is done external to this package, and can be
-done via `rtracklayer::import` or `plyranges::read_gff`. The resulting
-GRanges is passed to `collect_parts()`, then you can use
-`plyranges::filter()` to select the criteria for genes you’re interested
-in.
+### 1\. Setting up annotation GRanges
 
-Alternatively, since `collect_parts()` is a generic we can also start
-from any of the following objects:
-
-  - character vector containing a path to GFF file
-  - GFF/GTFFile class from `rtracklayer`
-  - TxDb and related Bioconductor
-
-`collect_parts()` computes a `GRanges` with number of rows equal to
-genes, it only considers intronic/exonic parts linked to a single gene
-only.
-
-The result is a GRanges object with number of rows equal to genes, and
-columns containing the intronic and exonic features (as list columns)
-and the number of times a gene overlaps anyother feature (as well as any
-associated information from the gtf file).
+You can start from a GTF/GFF file for your given organism and
+`collect_parts()` to gather up the intronic/exonic regions for each
+gene. You can then use the *plyranges* grammar to select your target
+gene.
 
 ``` r
 library(superintronic)
-#> Registered S3 methods overwritten by 'ggplot2':
-#>   method         from 
-#>   [.quosures     rlang
-#>   c.quosures     rlang
-#>   print.quosures rlang
-library(magrittr)
-library(plyranges)
-#> Loading required package: BiocGenerics
-#> Loading required package: parallel
-#> 
-#> Attaching package: 'BiocGenerics'
-#> The following objects are masked from 'package:parallel':
-#> 
-#>     clusterApply, clusterApplyLB, clusterCall, clusterEvalQ,
-#>     clusterExport, clusterMap, parApply, parCapply, parLapply,
-#>     parLapplyLB, parRapply, parSapply, parSapplyLB
-#> The following objects are masked from 'package:stats':
-#> 
-#>     IQR, mad, sd, var, xtabs
-#> The following objects are masked from 'package:base':
-#> 
-#>     anyDuplicated, append, as.data.frame, basename, cbind,
-#>     colnames, dirname, do.call, duplicated, eval, evalq, Filter,
-#>     Find, get, grep, grepl, intersect, is.unsorted, lapply, Map,
-#>     mapply, match, mget, order, paste, pmax, pmax.int, pmin,
-#>     pmin.int, Position, rank, rbind, Reduce, rownames, sapply,
-#>     setdiff, sort, table, tapply, union, unique, unsplit, which,
-#>     which.max, which.min
-#> Loading required package: IRanges
-#> Loading required package: S4Vectors
-#> Loading required package: stats4
-#> 
-#> Attaching package: 'S4Vectors'
-#> The following object is masked from 'package:base':
-#> 
-#>     expand.grid
-#> Loading required package: GenomicRanges
-#> Loading required package: GenomeInfoDb
-#> 
-#> Attaching package: 'plyranges'
-#> The following object is masked from 'package:stats':
-#> 
-#>     filter
+suppressPackageStartupMessages(library(plyranges))
 
 features <- system.file("extdata", 
                         "Homo_sapiens.GRCh37.75_subset.gtf", 
                         package = "airway") %>% 
   collect_parts() %>% 
-  filter(source == "protein_coding", n_olaps == 1)
+  filter(gene_name == "SRM")
 
 features
-#> GRanges object with 3 ranges and 9 metadata columns:
+#> GRanges object with 1 range and 9 metadata columns:
 #>       seqnames            ranges strand |         gene_id   gene_name
 #>          <Rle>         <IRanges>  <Rle> |           <Rle> <character>
 #>   [1]        1 11114641-11120081      - | ENSG00000116649         SRM
-#>   [2]        1 11072414-11085796      + | ENSG00000120948      TARDBP
-#>   [3]        1 11006528-11042094      - | ENSG00000175262    C1orf127
 #>          gene_source   gene_biotype     type         source   n_olaps
 #>          <character>    <character> <factor>       <factor> <integer>
 #>   [1] ensembl_havana protein_coding     gene protein_coding         1
-#>   [2] ensembl_havana protein_coding     gene protein_coding         1
-#>   [3] ensembl_havana protein_coding     gene protein_coding         1
 #>                                                                exonic_parts
 #>                                                               <GRangesList>
 #>   [1] 1:11114641-11115261:-,1:11115838-11115983:-,1:11116068-11116151:-,...
-#>   [2] 1:11072414-11072485:+,1:11072699-11072800:+,1:11073773-11074022:+,...
-#>   [3] 1:11006528-11006798:-,1:11007700-11009871:-,1:11014076-11014199:-,...
 #>                                                              intronic_parts
 #>                                                               <GRangesList>
 #>   [1] 1:11115262-11115837:-,1:11115984-11116067:-,1:11116152-11116660:-,...
-#>   [2] 1:11072486-11072698:+,1:11072801-11073772:+,1:11074023-11075580:+,...
-#>   [3] 1:11006799-11007699:-,1:11009872-11014075:-,1:11014200-11015046:-,...
 #>   -------
 #>   seqinfo: 1 sequence from an unspecified genome; no seqlengths
 ```
 
-## Computing coverage over BAM(s)
+### 2\. Computing coverage over samples
 
-### Making coverage scores into a tidy GRanges
-
-Here we compute a long form GRanges containing coverage scores in
-parallel over a set of BAM files. We have structured it so you specify a
-data frame, (like you would get from targets in `limma`), that contains
-a column identified by `source`, that specifies the BAM file names.
-Other options include specifying a GRanges that represents the genome
-build, an optional target GRanges for restricting coverage (requiring
-the BAM to be indexed), an argument for dropping entire regions that
-have zero coverage, and an argumet for parallel computations.
-
-``` r
-# signature (dispatch on spec and source)
-compute_coverage_long(spec,
-                      source,
-                      .target = NULL,
-                      .genome_info = NULL,
-                      .drop_empty = TRUE
-                      .parallel = BiocParallel::bpparam()
-                      )
-```
-
-This function automatically propagates, the metadata associated with a
-design onto the resulting GRanges, however a user may also just provide
-a vector of BAM files and then add any relevant design variables later
-with `join_design()`.
-
-As an example, let’s use BAM files from the
-[`airway`](https://bioconductor.org/packages/release/data/experiment/html/airway.html)
-data package.
+You can compute a long form GRanges containing coverage scores in
+parallel over a set of BAM files. All you need to begin is a character
+vector containing the path the BAM files or a `data.frame` representing
+the experimental design that contains a column of BAM files.
 
 ``` r
 design <- read.csv(system.file("extdata", 
@@ -175,7 +94,8 @@ design <- read.csv(system.file("extdata",
   )
 
 cvg <- compute_coverage_long(design, source = "bam")
-cvg
+
+cvg 
 #> GRanges object with 98561 ranges and 6 metadata columns:
 #>           seqnames             ranges strand |  sample_id     cell
 #>              <Rle>          <IRanges>  <Rle> |   <factor> <factor>
@@ -233,106 +153,93 @@ cvg
 #>   seqinfo: 84 sequences from an unspecified genome
 ```
 
-Once the coverage is in long form, we can then merge overlapping genomic
-features over the experimental design via an intersect overlap join and
-nesting over the union ranges of an index index (usually gene\_id).
+This function automatically propagates, the metadata associated with a
+design onto the resulting GRanges. You can speed up this computation if
+your BAM files are indexed by providing a target GRanges so coverage
+will be restricted to that set of ranges only.
+
+Once the coverage has been computed as a GRanges object, we can then
+intercet overlapping gene parts (from `collect_parts()`)
 
 ``` r
-cvg_over_features <- nest_by_overlaps(cvg,
-                                      features, 
-                                      .key = dplyr::vars(sample_id),
-                                      .index = dplyr::vars(gene_id)
-)
-
+cvg_over_features <- cvg %>% 
+  select(-bam) %>% 
+  join_parts(features)
 cvg_over_features
-#> GRanges object with 24 ranges and 4 metadata columns:
-#>        seqnames            ranges strand |         gene_id  sample_id
-#>           <Rle>         <IRanges>  <Rle> |           <Rle>   <factor>
-#>    [1]        1 11114641-11120081      * | ENSG00000116649 SRR1039508
-#>    [2]        1 11114641-11120081      * | ENSG00000116649 SRR1039509
-#>    [3]        1 11114641-11120081      * | ENSG00000116649 SRR1039512
-#>    [4]        1 11114641-11120081      * | ENSG00000116649 SRR1039513
-#>    [5]        1 11114641-11120081      * | ENSG00000116649 SRR1039516
-#>    ...      ...               ...    ... .             ...        ...
-#>   [20]        1 11006528-11042094      * | ENSG00000175262 SRR1039513
-#>   [21]        1 11006528-11042094      * | ENSG00000175262 SRR1039516
-#>   [22]        1 11006528-11042094      * | ENSG00000175262 SRR1039517
-#>   [23]        1 11006528-11042094      * | ENSG00000175262 SRR1039520
-#>   [24]        1 11006528-11042094      * | ENSG00000175262 SRR1039521
-#>                 n_bases         score
-#>           <IntegerList> <IntegerList>
-#>    [1]       12,1,1,...     0,1,2,...
-#>    [2]       10,3,1,...     0,1,3,...
-#>    [3]       9,9,11,...     0,1,2,...
-#>    [4]       11,2,3,...     0,1,2,...
-#>    [5]        2,8,3,...     1,0,2,...
-#>    ...              ...           ...
-#>   [20]  271,901,935,...     0,0,0,...
-#>   [21] 271,901,2172,...     0,0,0,...
-#>   [22] 271,901,2172,...     0,0,0,...
-#>   [23]  271,901,558,...     0,0,0,...
-#>   [24] 271,901,2172,...     0,0,0,...
+#> GRanges object with 7886 ranges and 10 metadata columns:
+#>          seqnames            ranges strand |  sample_id     cell      dex
+#>             <Rle>         <IRanges>  <Rle> |   <factor> <factor> <factor>
+#>      [1]        1 11114641-11114652      * | SRR1039508   N61311    untrt
+#>      [2]        1          11114653      * | SRR1039508   N61311    untrt
+#>      [3]        1          11114654      * | SRR1039508   N61311    untrt
+#>      [4]        1 11114655-11114656      * | SRR1039508   N61311    untrt
+#>      [5]        1 11114657-11114662      * | SRR1039508   N61311    untrt
+#>      ...      ...               ...    ... .        ...      ...      ...
+#>   [7882]        1 11119982-11119986      * | SRR1039521  N061011      trt
+#>   [7883]        1 11119987-11119989      * | SRR1039521  N061011      trt
+#>   [7884]        1 11119990-11119991      * | SRR1039521  N061011      trt
+#>   [7885]        1 11119992-11119993      * | SRR1039521  N061011      trt
+#>   [7886]        1 11119994-11120081      * | SRR1039521  N061011      trt
+#>             albut     score         gene_id feature_type feature_rank
+#>          <factor> <integer>           <Rle>        <Rle>    <integer>
+#>      [1]    untrt         0 ENSG00000116649         exon            1
+#>      [2]    untrt         1 ENSG00000116649         exon            1
+#>      [3]    untrt         2 ENSG00000116649         exon            1
+#>      [4]    untrt         3 ENSG00000116649         exon            1
+#>      [5]    untrt         6 ENSG00000116649         exon            1
+#>      ...      ...       ...             ...          ...          ...
+#>   [7882]    untrt         4 ENSG00000116649         exon            7
+#>   [7883]    untrt         3 ENSG00000116649         exon            7
+#>   [7884]    untrt         2 ENSG00000116649         exon            7
+#>   [7885]    untrt         1 ENSG00000116649         exon            7
+#>   [7886]    untrt         0 ENSG00000116649         exon            7
+#>          feature_strand feature_length
+#>                   <Rle>      <integer>
+#>      [1]              -            621
+#>      [2]              -            621
+#>      [3]              -            621
+#>      [4]              -            621
+#>      [5]              -            621
+#>      ...            ...            ...
+#>   [7882]              -            248
+#>   [7883]              -            248
+#>   [7884]              -            248
+#>   [7885]              -            248
+#>   [7886]              -            248
 #>   -------
 #>   seqinfo: 84 sequences from an unspecified genome
 ```
 
-### Computing coverage wide form
+Further summaries can then be computed using rangewise diagnostics, see
+the `rango()` function for details.
 
-Returns a `RaggedExperiment` object (useful for doing things like PCA,
-CCA more of a bioconductor approach etc.)
+### 3\. Visualising coverage scores
 
-``` r
-compute_coverage_wide(design,
-                      source,
-                      .target = GenomicRanges::GRanges(),
-                      .genome_info,
-                      .parallel = BiocParallel::bpparam()
-                      )
-```
-
-## Rangewise diagnostics
-
-We can then compute a bunch of `rangostics` (name TBD), over a given
-(key and index) accross a column representing the coverage score.
-
-  - mean
-  - min, median, max
-  - quantile
-  - variance
-  - variance\_shift
-  - bases\_above\_score
-  - near\_feature\_*covnostic*
-
-Includes functions for purrr like mapping for sliding/tiling/stretching
-over genomic windows.
-
-This is conceptually similar to `dplyr::summarise_at`
+Coverage over a gene or a genomic region can be constructed via the
+`view_coverage()` function. The coverage score is disjoined and
+aggregated over all samples that overlaps the target region:
 
 ``` r
-rango(cvg_over_features, y = score, wt = width, .funs, ...)
+view_coverage(cvg_over_features, features)
 ```
 
-## Visualising coverage scores
+<img src="man/figures/README-cov-01-1.png" width="100%" />
 
-Options for visualising coverage over a given range
+By default, the coverage is aligned from the 5’ to the 3’ end of the
+target region, and exon regions are coloured green and intron parts are
+colour orange. The function returns a ggplot object, so extra
+annotations or layers can be added via the `ggplot2` library.
+
+Coverage scores can also be facetted if additional experimental design
+information has been added. For example, we can split the coverage by
+each sample or treatment group or cell type
 
 ``` r
-cvg_over_features <- join_parts(cvg, features) 
-
-cvg_over_features %>% 
-  view_coverage(., filter(features, gene_id == "ENSG00000116649"))
+view_coverage(cvg_over_features, features, facets = "cell")
 ```
 
-<img src="man/figures/README-unnamed-chunk-7-1.png" width="100%" />
+<img src="man/figures/README-cov-02-1.png" width="100%" />
 
-``` r
+## Learning more
 
-cvg_over_features %>% 
-  view_coverage(., filter(features, gene_id == "ENSG00000116649"),
-                facets = dplyr::vars(dex))
-```
-
-<img src="man/figures/README-unnamed-chunk-7-2.png" width="100%" />
-
-This returns a regular old ggplot object, so segments can be overlaid
-with by adding to the plot object.
+For more advanced uses of the package see the vignette.

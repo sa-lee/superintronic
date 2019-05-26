@@ -20,41 +20,25 @@ library(magrittr)
 library(plyranges)
 ```
 
-_superintronic_ centers around exploring coverage over exonic and intronic
+_superintronic_ centers around exploring coverage over genomic
 regions via computing simple summary statistics and visualisations. 
 The aim is to provide an extremely modular worklfow via an interface built on top of the 
 [_plyranges_](https://sa-lee.github.io/plyranges/index.html) package. 
 This means that you can modify any of the steps provided 
 with the _plyranges_ grammar or just use our defaults.
 
-The basic workflow consists of three steps:  
+The basic workflow consists of three steps  
 
 1. Setting up annotations
-2. Computing coverage and diagnostics
+2. Computing coverage
 3. Visualising coverage results
 
 ## Setting up annotation GRanges
 
 We assume you are starting from a GTF/GFF file for your given organism. 
-The reading of the GFF file is done external to this package, 
-and can be done via `rtracklayer::import` or `plyranges::read_gff`.
-The resulting GRanges is passed to `collect_parts()`, then you can use
-`plyranges::filter()` to select the criteria for genes you're interested in.
+The reading of the GFF file can be done externally from this package 
+via `rtracklayer::import()` or `plyranges::read_gff()`.
 
-Alternatively, since `collect_parts()` is a generic we can also start
-from any of the following objects:
-
-* character vector containing a path to GFF file
-* GFF/GTFFile class from `rtracklayer`
-* TxDb and related Bioconductor
-
-`collect_parts()` computes a `GRanges` with number of rows equal to genes,
-it only considers intronic/exonic parts linked to a single gene only.
-
-The result is a GRanges object with number of rows equal to genes,
-and columns containing the intronic and exonic features (as list columns)
-and the number of times a gene overlaps anyother feature (as well as
-any associated information from the gtf file). 
 ```{r eval = TRUE}
 library(superintronic)
 library(magrittr)
@@ -69,6 +53,20 @@ features <- system.file("extdata",
 features
 ```
 
+The result is a GRanges object with number of rows equal to genes,
+and columns containing the intronic and exonic features (as list columns)
+and the number of times a gene overlaps anyother feature (as well as
+any associated gene information from the gtf file). Any further
+transformations can be passed to the plyranges grammar, for example you can
+use  `plyranges::filter()` to select the criteria for genes you're interested in.
+
+
+If you would prefer not to read in an entire GFF file into memory as a `GRanges`
+object, `collect_parts()` accepts any of the following as inputs:
+
+* character vector containing a path to GFF file
+* GFF/GTFFile class exported from `rtracklayer`
+* TxDb and related Bioconductor objects
 
 
 ## Computing coverage over BAM(s)
