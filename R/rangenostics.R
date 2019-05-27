@@ -45,7 +45,7 @@ setMethod("rango", "GroupedGenomicRanges",
             # need to check name input for list
             res <- lapply(
               .funs, 
-              function(.f) { viewApply(views, .f, ..., simplify = FALSE) }
+              function(.f) { viewApply(views, .f, ...) }
             )
             res <- lapply(res, function(x) {
               ans <- unlist(x)
