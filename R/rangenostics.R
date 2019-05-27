@@ -10,6 +10,7 @@
 #' @importClassesFrom IRanges Ranges
 #' 
 #' @export
+#' @rdname range-diagnostics
 setGeneric("rango", function(x, .var, .funs, ...) {
   standardGeneric("rango")
 })
@@ -24,24 +25,86 @@ make_views_list <- function(x, .var) {
   as(lapply(x, make_views, .var = .var), "List")
 }
 
-setMethod("rango", "Ranges", 
+#' @rdname range-diagnostics
+#' @export
+setMethod("rango", "GenomicRanges", 
           function(x, .var, .funs, ...) {
-            .var <- rlang::ensym(.var)
-            sub <- plyranges::select(x, !!.var)
-            message("No grouping variable given, using seqnames instead.")
-            x <- split_ranges(x, seqnames)
-            views <- make_views_list(x, as.character(.var))
-            lapply(.funs, function(.f) IRanges::viewApply(views, .f, ...))
-            
+            message("No grouping variable available, using seqnames.")
+            rango(group_by(x, seqnames), .var, .funs, ...)
           })
 
 
+#' @rdname range-diagnostics
+#'@export
 setMethod("rango", "GroupedGenomicRanges", 
           function(x, .var, .funs, ...) {
             .var <- rlang::ensym(.var)
             sub <- plyranges::select(x, !!.var)
-            x <- split_ranges(x)
-            views <- make_views_list(x, as.character(.var))
-            lapply(.funs, function(.f) IRanges::viewApply(views, .f, ...))
-  
+            y <- split_ranges(x)
+            views <- make_views_list(y, as.character(.var))
+            # need to check name input for list
+            res <- lapply(
+              .funs, 
+              function(.f) { viewApply(views, .f, ..., simplify = FALSE) }
+            )
+            res <- lapply(res, function(x) {
+              ans <- unlist(x)
+              if (is(ans, "list")) {
+                return(as(ans, "List"))
+              }
+              return(ans)
+            })
+            res <- DataFrame(res)
+            groups <- mcols(x@inx)
+            ans <- unlist(reduce(y, ignore.strand = TRUE))
+            mcols(ans) <- cbind(groups, res)
+            ans
+            
 })
+
+
+
+tile_view <- function(x, width) {
+  if (is(x, "Views")) {
+    ln <- length(IRanges::subject(x))
+  } else {
+    ln <- length(x)
+  }
+  trim(successiveViews(x, rep.int(width, ln %/% width + 1)))
+}
+
+roll_view <- function(x, width, step) {
+  
+  if (is(x, "Views")) {
+    ln <- length(IRanges::subject(x))
+  } else {
+    ln <- length(x)
+  }
+  
+  rng <- IRanges(start = seq.int(1, ln, by = step), width = width)
+  
+  trim(Views(x, start = rng))
+  
+}
+
+roll_map <- function(x, ...) {
+  
+}
+
+stretch_view <- function(x, width, step) {
+  if (is(x, "Views")) {
+    ln <- length(IRanges::subject(x))
+  } else {
+    ln <- length(x)
+  }
+  
+  rng <- IRanges(start = 1, width =  seq.int(width, ln, by = step))
+  
+  trim(Views(x, start = rng))
+  
+}
+
+
+
+
+
