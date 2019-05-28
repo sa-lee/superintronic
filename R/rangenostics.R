@@ -64,6 +64,8 @@ setMethod("rango", "GroupedGenomicRanges",
 
 
 
+# not look in to dplyr:::summarise_at ; manip_at and as_fun_list
+
 tile_view <- function(x, width) {
   if (is(x, "Views")) {
     ln <- length(IRanges::subject(x))
