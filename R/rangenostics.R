@@ -61,34 +61,3 @@ setMethod("rango", "GroupedGenomicRanges",
             ans
             
 })
-
-
-set_ln <- function(x) {
-  if (is(x, "Views")) return(length(IRanges::subject(x)))
-  return(length(x))
-}
-
-# not look in to dplyr:::summarise_at ; manip_at and as_fun_list
-
-tile_view <- function(x, width) {
-  trim(successiveViews(x, rep.int(width, set_ln(x) %/% width + 1)))
-}
-
-roll_view <- function(x, width, step) {
-  rng <- IRanges(start = seq.int(1, set_ln(x), by = step), width = width)
-  trim(Views(x, start = rng))
-}
-
-roll_map <- function(x, ...) {
-  
-}
-
-stretch_view <- function(x, width, step) {
-  rng <- IRanges(start = 1, width =  seq.int(width, set_ln(x), by = step))
-  trim(Views(x, start = rng))
-}
-
-
-
-
-
