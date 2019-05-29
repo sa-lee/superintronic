@@ -25,6 +25,17 @@ stretch_view <- function(x, start, step) {
 }
 
 
+mapper <- function(x, .fun) {
+  .fun <- rlang::as_function(.fun)
+  
+  res <- try(.fun(x), silent = TRUE)
+  
+  if (is(res, "try-error")) {
+    res <- viewApply(x, function(.) .fun(.))
+  }
+  return(res)
+}
+
 #' Map a function over windows
 #' 
 #' @param .x An atomic vector or Rle object.
