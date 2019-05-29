@@ -63,28 +63,18 @@ setMethod("rango", "GroupedGenomicRanges",
 })
 
 
+set_ln <- function(x) {
+  if (is(x, "Views")) return(length(IRanges::subject(x)))
+  return(length(x))
+}
 
 tile_view <- function(x, width) {
-  if (is(x, "Views")) {
-    ln <- length(IRanges::subject(x))
-  } else {
-    ln <- length(x)
-  }
-  trim(successiveViews(x, rep.int(width, ln %/% width + 1)))
+  trim(successiveViews(x, rep.int(width, set_ln(x) %/% width + 1)))
 }
 
 roll_view <- function(x, width, step) {
-  
-  if (is(x, "Views")) {
-    ln <- length(IRanges::subject(x))
-  } else {
-    ln <- length(x)
-  }
-  
-  rng <- IRanges(start = seq.int(1, ln, by = step), width = width)
-  
+  rng <- IRanges(start = seq.int(1, set_ln(x), by = step), width = width)
   trim(Views(x, start = rng))
-  
 }
 
 roll_map <- function(x, ...) {
@@ -92,16 +82,8 @@ roll_map <- function(x, ...) {
 }
 
 stretch_view <- function(x, width, step) {
-  if (is(x, "Views")) {
-    ln <- length(IRanges::subject(x))
-  } else {
-    ln <- length(x)
-  }
-  
-  rng <- IRanges(start = 1, width =  seq.int(width, ln, by = step))
-  
+  rng <- IRanges(start = 1, width =  seq.int(width, set_ln(x), by = step))
   trim(Views(x, start = rng))
-  
 }
 
 
