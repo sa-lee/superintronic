@@ -68,6 +68,8 @@ set_ln <- function(x) {
   return(length(x))
 }
 
+# not look in to dplyr:::summarise_at ; manip_at and as_fun_list
+
 tile_view <- function(x, width) {
   trim(successiveViews(x, rep.int(width, set_ln(x) %/% width + 1)))
 }
