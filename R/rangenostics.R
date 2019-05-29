@@ -30,7 +30,8 @@ make_views_list <- function(x, .var) {
 setMethod("rango", "GenomicRanges", 
           function(x, .var, .funs, ...) {
             message("No grouping variable available, using seqnames.")
-            rango(group_by(x, seqnames), .var, .funs, ...)
+            .var <- rlang::enquo(.var)
+            rango(group_by(x, seqnames), !!.var, .funs, ...)
           })
 
 
@@ -38,10 +39,12 @@ setMethod("rango", "GenomicRanges",
 #'@export
 setMethod("rango", "GroupedGenomicRanges", 
           function(x, .var, .funs, ...) {
-            .var <- rlang::ensym(.var)
+     
+            .var <- rlang::enquo(.var)
+            .var_c <- as.character(rlang::quo_get_expr(.var))
             sub <- plyranges::select(x, !!.var)
-            y <- split_ranges(x)
-            views <- make_views_list(y, as.character(.var))
+            y <- split_ranges(sub)
+            views <- make_views_list(y, .var_c)
             # need to check name input for list
             res <- lapply(
               .funs, 
