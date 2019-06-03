@@ -1,7 +1,7 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# superintronic
+# superintronic <img id="superintronic" src="man/figures/superintronic.png" align="right" width = "125" />
 
 [![lifecycle](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://www.tidyverse.org/lifecycle/#experimental)
 [![Build
@@ -11,15 +11,11 @@ Status](https://ci.appveyor.com/api/projects/status/github/sa-lee/superintronic?
 [![Codecov test
 coverage](https://codecov.io/gh/sa-lee/superintronic/branch/master/graph/badge.svg)](https://codecov.io/gh/sa-lee/superintronic?branch=master)
 
-Exploring signal in high-throughput (RNA) sequencing data via coverage
-estimation.
-
 *superintronic* centers around exploring coverage over genomic regions
 via computing simple summary statistics and visualisations. The aim is
-to provide an extremely modular worklfow via an interface built on top
-of the [*plyranges*](https://sa-lee.github.io/plyranges/index.html)
-package. This means that you can modify any of the steps provided with
-the *plyranges* grammar or just use our defaults.
+to provide a modular worklfow via an interface built on top of the
+[*plyranges*](https://sa-lee.github.io/plyranges/index.html) package and
+emphasising simple
 
 ## Quick start
 
@@ -211,7 +207,7 @@ cvg_over_features
 ```
 
 Further summaries can then be computed using rangewise diagnostics, see
-the `rango()` function for details.
+the `rangle()` function for details.
 
 ### 3\. Visualising coverage scores
 
@@ -242,4 +238,8 @@ view_coverage(cvg_over_features, features, facets = "cell")
 
 ## Learning more
 
-For more advanced uses of the package see the vignette.
+*superintronic* provides a general API to compute not only coverage, but
+also aggregate and visualise other measurements of interest over any
+arbirtrary genomic region. See the [vignette]() for details and the
+[*plyranges*](https://sa-lee.github.io/plyranges/index.html#learning-more)
+documentation.
