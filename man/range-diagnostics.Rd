@@ -7,22 +7,34 @@
 \alias{rangle,GroupedGenomicRanges-method}
 \title{Compute diagnostics over Ranges}
 \usage{
-rangle(x, .var, .funs, ...)
+rangle(x, .var, .index, .funs)
 
-\S4method{rangle}{GenomicRanges}(x, .var, .funs, ...)
+\S4method{rangle}{GenomicRanges}(x, .var, .index, .funs)
 
-\S4method{rangle}{GroupedGenomicRanges}(x, .var, .funs, ...)
+\S4method{rangle}{GroupedGenomicRanges}(x, .var, .index, .funs)
 }
 \arguments{
 \item{x}{a Ranges object}
 
-\item{.var}{A meta data column in \code{x} to summarise over either a bare variable name
+\item{.var}{A metadata column in \code{x} to summarise over either a bare variable name
 or a character vector of length 1.}
 
-\item{.funs}{A list of functions to summarise}
+\item{.index}{Bare variable names that index each Range}
 
-\item{...}{additional parameters to pass to \code{.funs}}
+\item{.funs}{A named-list of functions that compute diagnostics.}
 }
 \description{
 Compute diagnostics over Ranges
+}
+\examples{
+gr <- GRanges(
+seqnames = factor(sample(lvls, 1000, replace = TRUE), levels = lvls),
+ranges = IRanges(start = rpois(1000, 10000), width = rpois(1000, 100)),
+grp = sample(letters[1:4], 1000, replace = TRUE),
+score = rnbinom(1000, size = 5, mu = 25)
+)
+
+rangle(gr, score, seqnames, list(mean = mean))
+
+
 }
