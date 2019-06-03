@@ -1,7 +1,8 @@
 #' Compute diagnoistics over Ranges (rango)
 #' 
 #' @param x a Ranges object 
-#' @param .var A meta data column in `x` to summarise over 
+#' @param .var A meta data column in `x` to summarise over either a bare variable name
+#' or a character vector of length 1.
 #' @param .funs A list of functions to summarise
 #' @param ... additional parameters to pass to `.funs`
 #' 
