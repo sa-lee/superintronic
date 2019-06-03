@@ -1,4 +1,4 @@
-#' Compute diagnoistics over Ranges (rango)
+#' Compute diagnostics over Ranges
 #' 
 #' @param x a Ranges object 
 #' @param .var A meta data column in `x` to summarise over either a bare variable name
@@ -12,8 +12,8 @@
 #' 
 #' @export
 #' @rdname range-diagnostics
-setGeneric("rango", function(x, .var, .funs, ...) {
-  standardGeneric("rango")
+setGeneric("rangle", function(x, .var, .funs, ...) {
+  standardGeneric("rangle")
 })
 
 make_views <- function(x, .var) {
@@ -28,28 +28,27 @@ make_views_list <- function(x, .var) {
 
 #' @rdname range-diagnostics
 #' @export
-setMethod("rango", "GenomicRanges", 
+setMethod("rangle", "GenomicRanges", 
           function(x, .var, .funs, ...) {
             message("No grouping variable available, using seqnames.")
             .var <- rlang::enquo(.var)
-            rango(group_by(x, seqnames), !!.var, .funs, ...)
+            rangle(group_by(x, seqnames), !!.var, .funs, ...)
           })
 
 
 #' @rdname range-diagnostics
 #'@export
-setMethod("rango", "GroupedGenomicRanges", 
+setMethod("rangle", "GroupedGenomicRanges", 
           function(x, .var, .funs, ...) {
      
             .var <- rlang::enquo(.var)
             .var_c <- as.character(rlang::quo_get_expr(.var))
-            sub <- plyranges::select(x, !!.var)
-            y <- split_ranges(sub)
+            y <- split_ranges(x)
             views <- make_views_list(y, .var_c)
             # need to check name input for list
             res <- lapply(
               .funs, 
-              function(.f) { viewApply(views, .f, ...) }
+              function(.f) { viewApply(views, .f) }
             )
             res <- lapply(res, function(x) {
               ans <- unlist(x)
@@ -58,10 +57,10 @@ setMethod("rango", "GroupedGenomicRanges",
               }
               return(ans)
             })
-            res <- DataFrame(res)
-            groups <- mcols(x@inx)
-            ans <- unlist(reduce(y, ignore.strand = TRUE))
-            mcols(ans) <- cbind(groups, res)
-            ans
+            
+            res <- S4Vectors::DataFrame(res)
+            regions <- summarise(x, start = min(start), end = max(end))
+            res <- cbind(regions, res)
+            GenomicRanges::makeGRangesFromDataFrame(res, keep.extra.columns = TRUE)
             
 })

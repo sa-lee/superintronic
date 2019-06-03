@@ -27,3 +27,23 @@ a RangesList object
 \description{
 Cast a Ranges to a RangesList
 }
+\details{
+If \code{x} is already grouped, then passing \code{...} are ignored. If \code{x}
+is not grouped and variable names are provided to \code{...} these are forwarded
+to \code{[plyranges::group_by()]}, if no variables are provided then x is returned.
+}
+\examples{
+
+lvls <- paste0("chr",c(1:23))
+gr <- GRanges(
+  seqnames = factor(sample(lvls, 1000, replace = TRUE), levels = lvls),
+  ranges = IRanges(start = rpois(1000, 10000), width = rpois(1000, 100)),
+  grp = sample(letters[1:4], 1000, replace = TRUE),
+  gc = runif(1000)
+)
+split_ranges(gr, seqnames)
+gr_by_grp <- group_by(gr, grp)
+split_ranges(gr_by_grp)   
+
+
+}
