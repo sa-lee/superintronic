@@ -37,7 +37,7 @@ view_coverage <- function(data, score, colour = NULL, facets = rng_vars()) {
   plot_tbl <- as.data.frame(coverage_view)
   
   cvg_hist <- ggplot(plot_tbl, 
-                     aes(x = start, xend = end, y = 0, yend = score))
+                     aes(x = start, xend = end, y = 0, yend = score)) +
     rescale_by_width(data)
   
   if (!no_col)  {
@@ -52,10 +52,7 @@ view_coverage <- function(data, score, colour = NULL, facets = rng_vars()) {
   
   # cosmetic fixes 
   cvg_hist <- cvg_hist +
-    theme(axis.title.x = element_blank(),
-          axis.ticks.x = element_blank(),
-          axis.text.x = element_blank()) +
-    labs(y = rlang::quo_get_expr(score))
+    labs(y = rlang::quo_get_expr(score), x = NULL)
   
   
   return(cvg_hist)

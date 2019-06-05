@@ -52,7 +52,7 @@ setMethod("rangle", "GroupedGenomicRanges",
             # need to check name input for list
             res <- lapply(
               .funs, 
-              function(.f) { viewApply(views, .f) }
+              function(.f) { viewApply(views, .f, simplify = FALSE) }
             )
             res <- lapply(res, function(x) {
               ans <- unlist(x)
