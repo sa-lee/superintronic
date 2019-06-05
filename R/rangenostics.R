@@ -37,6 +37,14 @@ make_views_list <- function(x, .var) {
   as(lapply(x, make_views, .var = .var), "List")
 }
 
+set_regroups <- function(x, .index) {
+  .groups <- plyranges::group_vars(x)
+  .index <- rlang::enquo(.index)
+  .index_c <- as.character(rlang::quo_get_expr(.index))
+  .regroups <- union(.groups, .index_c)
+  rlang::syms(.regroups)
+}
+
 #' @rdname range-diagnostics
 #' @export
 setMethod("rangle", "GenomicRanges", 
@@ -51,13 +59,10 @@ setMethod("rangle", "GenomicRanges",
 #'@export
 setMethod("rangle", "GroupedGenomicRanges", 
           function(x, .var, .index, .funs) {
-            .groups <- plyranges::group_vars(x)
-            .index <- rlang::enquo(.index)
-            .index_c <- as.character(rlang::quo_get_expr(.index))
-            .regroups <- union(.groups, .index_c)
             .var <- rlang::enquo(.var)
             .var_c <- as.character(rlang::quo_get_expr(.var))
-            x <- group_by(ungroup(x), !!!rlang::syms(.regroups))
+            .regroups <- set_regroups(x, !!rlang::enquo(.index))
+            x <- group_by(ungroup(x), !!!.regroups)
             y <- split_ranges(x)
             
             views <- make_views_list(y, .var_c)
