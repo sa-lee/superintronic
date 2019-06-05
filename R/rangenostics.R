@@ -27,23 +27,6 @@ setGeneric("rangle", function(x, .var, .index,  .funs) {
   standardGeneric("rangle")
 })
 
-make_views <- function(x, .var) {
-  subject <- S4Vectors::Rle(mcols(x)[[.var]], lengths = BiocGenerics::width(x))
-  rng <- reduce(ranges(subject))
-  IRanges::Views(subject, start = rng)
-} 
-
-make_views_list <- function(x, .var) {
-  as(lapply(x, make_views, .var = .var), "List")
-}
-
-set_regroups <- function(x, .index) {
-  .groups <- plyranges::group_vars(x)
-  .index <- rlang::enquo(.index)
-  .index_c <- as.character(rlang::quo_get_expr(.index))
-  .regroups <- union(.groups, .index_c)
-  rlang::syms(.regroups)
-}
 
 #' @rdname range-diagnostics
 #' @export
@@ -95,3 +78,29 @@ setMethod("rangle", "GroupedGenomicRanges",
                                   end = end_x)
             
 })
+
+
+
+rng_vars <- function(...) {
+  rlang::quos(...)
+}
+
+
+
+make_views <- function(x, .var) {
+  subject <- S4Vectors::Rle(mcols(x)[[.var]], lengths = BiocGenerics::width(x))
+  rng <- reduce(ranges(subject))
+  IRanges::Views(subject, start = rng)
+} 
+
+make_views_list <- function(x, .var) {
+  as(lapply(x, make_views, .var = .var), "List")
+}
+
+set_regroups <- function(x, .index) {
+  .groups <- plyranges::group_vars(x)
+  .index <- rlang::enquo(.index)
+  .index_c <- as.character(rlang::quo_get_expr(.index))
+  .regroups <- union(.groups, .index_c)
+  rlang::syms(.regroups)
+}

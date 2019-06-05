@@ -3,7 +3,7 @@
 #' @param data a GRanges object 
 #' @param score an expression or column in data that represents the coverage score
 #' @param colour a column in the data to highlight ranges by  
-#' @param facets a set of metadata or range variables in `data` quoted by `md_vars()` that is passed 
+#' @param facets a set of metadata or range variables in `data` quoted by `rng_vars()` that is passed 
 #' down to `facet_wrap()`
 #'
 #' @importFrom ggplot2 ggplot aes facet_wrap labs theme geom_segment geom_rect element_blank geom_hline
