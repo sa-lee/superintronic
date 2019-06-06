@@ -1,9 +1,9 @@
 #' An opinionated way of plotting intron/exon features
 #' 
 #' 
-#' @param data a GRanges object
-#' @param color a column in data that represents a feature 
-#' 
+#' @param data a GRanges object from `collect_parts()`
+#' @param group an optional 
+#' @param color an optional expression or bare variable in `data` that represents a feature 
 #' 
 #' @importFrom ggplot2 geom_segment scale_x_reverse aes scale_y_continuous scale_colour_brewer theme_bw theme guides scale_x_continuous expand_scale
 #' @return a ggplot object
@@ -38,6 +38,17 @@ view_segments <- function(data, color) {
     )
   
   annotation_tracks + rescale_by_width(data)
+  
+}
+
+
+#' @export
+layer_segment <- function(data, y, ...) {
+  stopifnot(is(data, "GRanges"))
+  y <- enquo(y)
+  plot_tbl <- as.data.frame(data)
+  
+  geom_segment(data = plot_tbl, aes(y = !!y, yend = !!y), ...)
   
 }
 
