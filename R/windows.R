@@ -50,7 +50,7 @@ tile_view <- function(x, width) {
 
 roll_view <- function(x, width, step) {
   rng <- IRanges(start = seq.int(1, set_ln(x), by = step), width = width)
-  Views(as(x, "Rle"), start = rng)
+  trim(Views(as(x, "Rle"), start = rng))
 }
 
 stretch_view <- function(x, start, step) {

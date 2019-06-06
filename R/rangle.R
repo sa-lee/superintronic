@@ -46,7 +46,7 @@ setMethod("rangle", "GroupedGenomicRanges",
             .var_c <- as.character(rlang::quo_get_expr(.var))
             .regroups <- set_regroups(x, !!rlang::enquo(.index))
             x <- group_by(ungroup(x), !!!.regroups)
-            y <- split_ranges(x)
+            y <- sort(split_ranges(x))
             
             views <- make_views_list(y, .var_c)
             # need to check name input for list
@@ -55,13 +55,9 @@ setMethod("rangle", "GroupedGenomicRanges",
               function(.f) { viewApply(views, .f, simplify = FALSE) }
             )
             res <- lapply(res, function(x) {
-              ans <- unlist(x)
-              if (is(ans, "list")) {
-                return(as(ans, "List"))
-              }
-              return(ans)
+              ans <- lapply(x, unlist)
+              do.call("rbind", ans)
             })
-            
             res <- S4Vectors::DataFrame(res)
             regions <- summarise(x,
                                  seqnames_x = unlist(BiocGenerics::unique(seqnames)),

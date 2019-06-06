@@ -10,19 +10,19 @@
 #' 
 
 lumpy <- function(x, .size) {
-  var(tile_map(x,  .size, function(.) mean(., na.rm = TRUE)), na.rm = TRUE)
+  c(lumpy = var(tile_map(x,  .size, function(.) mean(., na.rm = TRUE)), na.rm = TRUE))
 }
 
 stable <- function(x, .size) {
-  var(tile_map(x,  .size, function(.) var(., na.rm = TRUE)), na.rm = TRUE)
+  c(stable = var(tile_map(x,  .size, function(.) var(., na.rm = TRUE)), na.rm = TRUE))
 }
 
 sum_above <- function(x, .threshold) {
-  sum(x > .threshold)
+  c(sum_above = sum(x > .threshold))
 }
 
 flat_spots <- function(x, .threshold = 0, .tol = .Machine$double.eps^0.5) {
-  sum(abs(x - .threshold) < .tol)
+  c(flat_spots = sum(abs(x - .threshold) < .tol))
 }
 
 count_grams <- function(x, .size) {
@@ -35,6 +35,31 @@ count_grams <- function(x, .size) {
     count_median = median(bins),
     count_var = var(bins)
   )
+  
+}
+
+
+max_mean_shift <- function(x, .size, .step) {
+  views <- roll_view(x, .size, .step)
+  mns <- mean(views)
+  diffs <- abs(diff(mns))
+  
+  max_mean <- max(diffs, na.rm = TRUE)
+  max_inx <- which.max(diffs) + 1L
+  
+  c(max_mean = max_mean, max_inx = max_inx)
+  
+}
+
+max_var_shift <- function(x, .size, .step) {
+  views <- roll_view(x, .size, .step)
+  vars <- var(views, na.rm = TRUE)
+  diffs <- abs(diff(vars))
+  
+  max_var <- max(diffs, na.rm = TRUE)
+  max_inx <- which.max(diffs) + 1L
+  
+  c(max_var = max_var, max_inx = max_inx)
   
 }
 
