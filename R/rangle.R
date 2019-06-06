@@ -48,16 +48,23 @@ setMethod("rangle", "GroupedGenomicRanges",
             x <- group_by(ungroup(x), !!!.regroups)
             y <- sort(split_ranges(x))
             
+            print(.var_c)
             views <- make_views_list(y, .var_c)
-            # need to check name input for list
+            .funs <- check_funs(.funs, .var_c)
+            
             res <- lapply(
               .funs, 
               function(.f) { viewApply(views, .f, simplify = FALSE) }
             )
             res <- lapply(res, function(x) {
               ans <- lapply(x, unlist)
-              do.call("rbind", ans)
+              # bind answers together
+              ans <- do.call("rbind", ans)
+              ans
             })
+            
+            print(res)
+            
             res <- S4Vectors::DataFrame(res)
             regions <- summarise(x,
                                  seqnames_x = unlist(BiocGenerics::unique(seqnames)),
@@ -76,6 +83,14 @@ setMethod("rangle", "GroupedGenomicRanges",
 })
 
 
+check_funs <- function(.funs, .var_c) {
+  stopifnot(is(.funs, "list"))
+  stopifnot(!any(names(.funs) == ""))
+  stopifnot(length(unique(names(.funs))) == length(.funs))
+  names(.funs) <- paste0(.var_c, "_", names(.funs))
+  print(.funs)
+  .funs
+}
 
 rng_vars <- function(...) {
   rlang::quos(...)

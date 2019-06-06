@@ -10,4 +10,8 @@ gr <- GRanges(
 )
 
 test_that("Returns a GRanges", {
+  res <- rangle(gr, score, seqnames, list(mean = mean))
+  expect_s4_class(res, "GRanges")
+  correct <- summarise(group_by(gr, seqnames), mean = sum(score*width) / sum(width))
+  expect_equal(res$mean, correct$mean)
 })
