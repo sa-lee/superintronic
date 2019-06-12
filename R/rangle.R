@@ -11,6 +11,7 @@
 #' @importClassesFrom IRanges Ranges
 #' 
 #' @examples
+#' lvls <- paste0("chr", 1:23)
 #' gr <- GRanges(
 #' seqnames = factor(sample(lvls, 1000, replace = TRUE), levels = lvls),
 #' ranges = IRanges(start = rpois(1000, 10000), width = rpois(1000, 100)),
