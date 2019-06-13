@@ -7,9 +7,11 @@
 view_segments(data, color)
 }
 \arguments{
-\item{data}{a GRanges object}
+\item{data}{a GRanges object from \code{collect_parts()}}
 
-\item{color}{a column in data that represents a feature}
+\item{color}{an optional expression or bare variable in \code{data} that represents a feature}
+
+\item{group}{an optional}
 }
 \value{
 a ggplot object

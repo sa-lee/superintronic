@@ -2,20 +2,20 @@
 % Please edit documentation in R/view-coverage.R
 \name{view_coverage}
 \alias{view_coverage}
-\title{View coverage as a stacked area chart}
+\title{View coverage as an area chart oriented from 5' to 3'}
 \usage{
-view_coverage(cvg, target, hline = NULL, facets = ggplot2::vars())
+view_coverage(data, score, colour = NULL, facets = rng_vars())
 }
 \arguments{
-\item{cvg}{a GRanges object obtained from \code{merge_coverage()}}
+\item{data}{a GRanges object}
 
-\item{target}{a GRanges object from \code{prepare_annotation()} containing a gene_id column}
+\item{score}{an expression or column in data that represents the coverage score}
 
-\item{hline}{an optional data.frame giving marker points}
+\item{colour}{a column in the data to highlight ranges by}
 
-\item{facets}{a set of variables quoted by \code{ggplot2::vars()} that is passed
+\item{facets}{a set of metadata or range variables in \code{data} quoted by \code{rng_vars()} that is passed
 down to \code{facet_wrap()}}
 }
 \description{
-View coverage as a stacked area chart
+View coverage as an area chart oriented from 5' to 3'
 }
