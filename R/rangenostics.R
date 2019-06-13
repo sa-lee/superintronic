@@ -9,13 +9,13 @@
 #' The 
 #' @rdname rangenostics
 #' @export
-lumpy <- function(x, .size) {
+lumpy <- function(x, .size = .autosize(x)) {
   var(tile_rle(x, .size, function(.) mean(., na.rm = TRUE)), na.rm = TRUE)
 }
 
 #' @rdname rangenostics
 #' @export
-bumpy <- function(x, .size) {
+bumpy <- function(x, .size = .autosize(x)) {
   var(tile_rle(x, .size, function(.) var(., na.rm = TRUE)), na.rm = TRUE)
 }
 
@@ -33,9 +33,10 @@ flat_spots <- function(x, .threshold = 0, .tol = .Machine$double.eps^0.5) {
 
 #' @rdname rangenostics
 #' @export
-count_grams <- function(x, .size) {
+count_grams <- function(x, .size = .autosize(x)) {
   bins <- tile_rle(x, .size, function(.) sum(., na.rm = TRUE))
-  list(count_min = min(bins),
+  list(
+    count_min = min(bins),
     count_max = max(bins),
     count_q1 = unname(quantile(bins, 0.25)),
     count_q3 = unname(quantile(bins, 0.75)),
@@ -62,13 +63,12 @@ max_mean_shift <- function(x, .size, .step) {
 #' @export
 max_var_shift <- function(x, .size, .step) {
   vars <- roll_rle(x, .size, .step, var, na.rm = TRUE)
-  vars <- var(views, na.rm = TRUE)
   diffs <- abs(diff(vars, lag = .step))
   
   max_var <- max(diffs, na.rm = TRUE)
   max_inx <- which.max(diffs) + 1L
   
-  c(max_var = max_var, max_inx = max_inx)
+  list(max_var = max_var, max_inx = max_inx)
   
 }
 

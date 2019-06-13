@@ -23,15 +23,21 @@
 #' @rdname windows
 tile_rle <- function(.x, .size = 1L, .fun, ...) {
   .check_tsibble()
+  stopifnot(length(.size) == 1 | length(.size) == length(.x))
   if (is(.x, "List")) {
-    res <- as(lapply(.x, 
-                     function(.y) .tile(.y, .size = .size, .fun = .fun, ...)),
+    res <- as(mapply(function(.y, .size) .tile(.y, .size, .fun = .fun, ...),
+                     .x, .size, SIMPLIFY = FALSE),
               "RleList")
               
   } else {
     res <- .tile(.x, .size = .size, .fun = .fun, ...)
   }
   res
+}
+
+.autosize <- function(x) {
+  if(is(x, "List")) return(pmax(as.integer(lengths(x) / 30), 1))
+  pmax(as.integer(length(x) / 30), 1)
 }
 
 .tile <- function(.x, .size, .fun, ...) {
