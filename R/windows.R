@@ -1,4 +1,4 @@
-#' Map a function over windows
+#' Map a function over an Rle in windows
 #' 
 #' @param .x An atomic vector or Rle object.
 #' @param .size The (integer) size of the window.
@@ -8,64 +8,78 @@
 #' @param ... Additional arguments passed on to the mapped function
 #'
 #' @details 
-#' The map functions apply a function over non-overlapping windows `[tile_map()]`,
-#' overlapping windows `[roll_map()]`, and windows with a fixed start but
-#' increasing width [`stretch_map()`]
+#' The map functions apply a function over non-overlapping windows `[tile_rle()]`,
+#' overlapping windows `[roll_rle()]`, and windows with a fixed start but
+#' increasing width [`stretch_rle()`]
 #' 
 #' @examples 
-#' tile_map(1:5, .size = 2, mean)
-#' roll_map(1:5, .size = 2, .step = 1, mean)
+#' x <- Rle(1:10, 1:10)
+#' tile_rle(x, .size = 2, mean)
+#' roll_rle(1:5, .size = 2, .step = 1, mean)
 #' stretch_map(1:5, .size = 1, .size = 2, mean)
+#' 
 #' 
 #' @export
 #' @rdname windows
-tile_map <- function(.x, .size, .fun, ...) {
-  viewApply(tile_view(.x, .size), .fun, ...)
-}
-
-#' @rdname windows
-#' @export
-roll_map <- function(x, .size, .step, .fun, ...) {
-  viewApply(roll_view(x, .size, .step), .fun)
-}
-
-#' @rdname windows
-#' @export
-stretch_map <- function(.x, .start, .step, .fun, ...) {
-  viewApply(stretch_view(.x, .start, .step), .fun, ...)
-}
-
-set_ln <- function(x) {
-  if (is(x, "Views")) return(length(IRanges::subject(x)))
-  return(length(x))
-}
-
-tile_view <- function(x, width) {
-  l <- set_ln(x)
-  r <- l %% width
-  w <- c(rep.int(width, l %/% width), r)
-  w <- w[w != 0]
-  trim(successiveViews(as(x, "Rle"), w))
-}
-
-roll_view <- function(x, width, step) {
-  rng <- IRanges(start = seq.int(1, set_ln(x), by = step), width = width)
-  trim(Views(as(x, "Rle"), start = rng))
-}
-
-stretch_view <- function(x, start, step) {
-  rng <- IRanges(start = start, width =  seq.int(start, set_ln(x), by = step))
-  trim(Views(as(x, "Rle"), start = rng))
-}
-
-
-mapper <- function(x, .fun) {
-  .fun <- rlang::as_function(.fun)
-  
-  res <- try(.fun(x), silent = TRUE)
-  
-  if (is(res, "try-error")) {
-    res <- viewApply(x, function(.) .fun(.))
+tile_rle <- function(.x, .size = 1L, .fun, ...) {
+  .check_tsibble()
+  if (is(.x, "List")) {
+    res <- as(lapply(.x, 
+                     function(.y) .tile(.y, .size = .size, .fun = .fun, ...)),
+              "RleList")
+              
+  } else {
+    res <- .tile(.x, .size = .size, .fun = .fun, ...)
   }
-  return(res)
+  res
+}
+
+.tile <- function(.x, .size, .fun, ...) {
+  as(unlist(tsibble::tile(.x, .f = .fun, ..., .size = .size)), "Rle")
+}
+#' @rdname windows
+#' @export
+stretch_rle <- function(.x, .size = 1L, .step = 1L, .fun, ...) {
+  .check_tsibble()
+  if (is(.x, "List")) {
+    res <- as(lapply(.x, 
+                     function(.y) .stretch(.y, .size = .size, ,step = .step, .fun = .fun, ...)),
+              "RleList")
+    
+  } else {
+    res <- .stretch(.x, .size = .size, .step = .step, .fun = .fun, ...)
+  }
+  res
+}
+
+.stretch <- function(.x, .size, .step, .fun, ...) {
+  as(unlist(tsibble::stretch(.x, .f = .fun, ..., .init = .size, .step = .step)),
+     "Rle")
+}
+
+#' @rdname windows
+#' @export
+roll_rle <- function(.x, .size = 1L, .step = 1L, .fun, ...) {
+  .check_tsibble()
+  if (is(.x, "List")) {
+    res <- as(lapply(.x, 
+                     function(.y) .roll(.y, .size = .size, ,step = .step, .fun = .fun, ...)),
+              "RleList")
+    
+  } else {
+    res <- .roll(.x, .size = .size, .step = .step, .fun = .fun, ...)
+  }
+  res
+}
+
+.roll <- function(.x, .size, .step, .fun, ...) {
+  as(unlist(tsibble::slide(.x, .f = .fun, ..., .step = .step, .size = .size)), 
+     "Rle")
+}
+
+.check_tsibble <- function() {
+  if (!requireNamespace("tsibble", quietly = TRUE)) {
+    stop("Package: tsibble required to run windowing functions. 
+         Please install it.")
+  } 
 }

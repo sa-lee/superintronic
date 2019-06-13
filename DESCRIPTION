@@ -32,7 +32,8 @@ Suggests:
     knitr,
     rmarkdown,
     testthat (>= 2.1.0),
-    magrittr
+    magrittr,
+    tsibble
 Remotes:
     thomasp85/patchwork
 License: Artistic-2.0

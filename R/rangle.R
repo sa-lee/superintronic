@@ -3,7 +3,8 @@
 #' @param x a Ranges object 
 #' @param .var A metadata column in `x` to summarise over either a bare variable name
 #' or a character vector of length 1.
-#' @param .index Bare variable names that index each Range
+#' @param .index A list of columns generated with `rng_vars()` 
+#' that index the ranges in `x`.
 #' @param .funs A named-list of functions that compute `rangenostics()`
 #' 
 #' 
@@ -12,11 +13,12 @@
 #' 
 #' @examples
 #' lvls <- paste0("chr", 1:23)
+#' N <- 1e5
 #' gr <- GRanges(
-#' seqnames = factor(sample(lvls, 1000, replace = TRUE), levels = lvls),
-#' ranges = IRanges(start = rpois(1000, 10000), width = rpois(1000, 100)),
-#' grp = sample(letters[1:4], 1000, replace = TRUE),
-#' score = rnbinom(1000, size = 5, mu = 25)
+#' seqnames = factor(sample(lvls, N, replace = TRUE), levels = lvls),
+#' ranges = IRanges(start = rpois(N, 10000), width = rpois(N, 100)),
+#' grp = sample(letters[1:4], N, replace = TRUE),
+#' score = rnbinom(N, size = 5, mu = 25)
 #' )
 #' 
 #' rangle(gr, score, seqnames, list(mean = mean))
@@ -34,8 +36,15 @@ setGeneric("rangle", function(x, .var, .index,  .funs) {
 setMethod("rangle", "GenomicRanges", 
           function(x, .var, .index, .funs) {
             .var <- rlang::enquo(.var)
-            .index <- rlang::enquo(.index)
-            rangle(group_by(x, !!.index), !!.var, !!.index, .funs)
+            if (!rlang::is_quosures(.index)) {
+              .index <- rlang::enquos(.index)
+            }
+            
+            rangle(group_by(x, !!!.index), 
+                   !!.var, 
+                   .index, 
+                   .funs)
+            
           })
 
 
@@ -45,26 +54,27 @@ setMethod("rangle", "GroupedGenomicRanges",
           function(x, .var, .index, .funs) {
             .var <- rlang::enquo(.var)
             .var_c <- as.character(rlang::quo_get_expr(.var))
-            .regroups <- set_regroups(x, !!rlang::enquo(.index))
+            if (!rlang::is_quosures(.index)) {
+              .index <- rlang::enquos(.index)
+            }
+            .regroups <- set_regroups(x, .index)
+            # this would be faster if plyranges had an add = TRUE on groups
             x <- group_by(ungroup(x), !!!.regroups)
-            y <- sort(split_ranges(x))
-            
-            print(.var_c)
-            views <- make_views_list(y, .var_c)
+            y <- split_ranges(x)
+            rle_list <- make_rlelist(y, .var_c)
             .funs <- check_funs(.funs, .var_c)
             
             res <- lapply(
               .funs, 
-              function(.f) { viewApply(views, .f, simplify = FALSE) }
+              function(.f) { mapper(rle_list, .f)}
             )
-            res <- lapply(res, function(x) {
-              ans <- lapply(x, unlist)
-              # bind answers together
-              ans <- do.call("rbind", ans)
-              ans
-            })
             
-            print(res)
+            res <- lapply(res, function(x) {
+              if(is(x, "list")) {
+                return(dplyr::bind_rows(x))
+              }
+              x
+            })
             
             res <- S4Vectors::DataFrame(res)
             regions <- summarise(x,
@@ -89,28 +99,53 @@ check_funs <- function(.funs, .var_c) {
   stopifnot(!any(names(.funs) == ""))
   stopifnot(length(unique(names(.funs))) == length(.funs))
   names(.funs) <- paste0(.var_c, "_", names(.funs))
-  print(.funs)
   .funs
 }
 
+#' Select range variables
+#' 
+#' @description This helper function is used to provide semantics
+#' for selecting variables. It is useful for specifying the index 
+#' in `rangle()` or passing to scoped variants in `dplyr` like 
+#' `dplyr::mutate_at()`.
+#' 
+#' @return A list of quosures
 rng_vars <- function(...) {
   rlang::quos(...)
 }
 
-make_views <- function(x, .var) {
-  subject <- S4Vectors::Rle(mcols(x)[[.var]], lengths = BiocGenerics::width(x))
-  rng <- reduce(ranges(subject))
-  IRanges::Views(subject, start = rng)
-} 
-
-make_views_list <- function(x, .var) {
-  as(lapply(x, make_views, .var = .var), "List")
+make_rlelist <- function(x, .var) {
+  # ignoring self overlaps
+  inx <- BiocGenerics::order(x)
+  var <- as(lapply(mcols(x, level = "within"), 
+                   function(.) .[[.var]]), "List")[inx]
+  bases <- width(x)[inx]
+  as(mapply(S4Vectors::Rle, 
+            var, 
+            bases), 
+     "RleList")
 }
 
 set_regroups <- function(x, .index) {
   .groups <- plyranges::group_vars(x)
-  .index <- rlang::enquo(.index)
-  .index_c <- as.character(rlang::quo_get_expr(.index))
+  if (!rlang::is_quosures(.index)) {
+    .index <- rlang::enquos(.index)
+  } 
+  .index_c <- vapply(.index, 
+                     function(q) as.character(rlang::quo_get_expr(q)),
+                     character(1)
+  )
   .regroups <- union(.groups, .index_c)
   rlang::syms(.regroups)
+}
+
+mapper <- function(x, .fun) {
+  .fun <- rlang::as_function(.fun)
+  
+  res <- try(.fun(x), silent = TRUE)
+  
+  if (is(res, "try-error")) {
+    res <- lapply(x, function(.) .fun(.))
+  }
+  return(res)
 }
