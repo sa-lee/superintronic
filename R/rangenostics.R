@@ -21,7 +21,7 @@ bumpy <- function(x, .size = .autosize(x)) {
 
 #' @rdname rangenostics
 #' @export
-sum_above <- function(x, .threshold) {
+crossing_points <- function(x, .threshold = mean(x) ) {
   sum(x > .threshold)
 }
 
