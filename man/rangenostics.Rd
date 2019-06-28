@@ -3,7 +3,7 @@
 \name{lumpy}
 \alias{lumpy}
 \alias{bumpy}
-\alias{sum_above}
+\alias{crossing_points}
 \alias{flat_spots}
 \alias{count_grams}
 \alias{max_mean_shift}
@@ -11,15 +11,15 @@
 \alias{gammy}
 \title{Rangewise diagnostics}
 \usage{
-lumpy(x, .size)
+lumpy(x, .size = .autosize(x))
 
-bumpy(x, .size)
+bumpy(x, .size = .autosize(x))
 
-sum_above(x, .threshold)
+crossing_points(x, .threshold = mean(x))
 
 flat_spots(x, .threshold = 0, .tol = .Machine$double.eps^0.5)
 
-count_grams(x, .size)
+count_grams(x, .size = .autosize(x))
 
 max_mean_shift(x, .size, .step)
 

@@ -1,7 +1,7 @@
 Package: superintronic
 Type: Package
 Title: Tools for Working with Intron Signal
-Version: 0.99.0
+Version: 0.99.1
 Authors@R: c(
     person("Stuart", "Lee", email = "lee.s@wehi.edu.au", role = c("aut", "cre")),
     person("Charity", "Law", email = "law@wehi.edu.au", role = c("aut"))

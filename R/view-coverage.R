@@ -24,7 +24,7 @@ view_coverage <- function(data, score, colour = NULL, facets = rng_vars()) {
     coverage_view <- plyranges::disjoin_ranges_directed(
       data,
       score = mean(!!score),
-      feature = unlist(!!colour)
+      feature = unlist(unique(!!colour))
     ) 
   } else {
     coverage_view <- plyranges::disjoin_ranges_directed(
