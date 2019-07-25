@@ -1,7 +1,7 @@
 Package: superintronic
 Type: Package
 Title: Tools for Working with Intron Signal
-Version: 0.99.1
+Version: 0.99.2
 Authors@R: c(
     person("Stuart", "Lee", email = "lee.s@wehi.edu.au", role = c("aut", "cre")),
     person("Charity", "Law", email = "law@wehi.edu.au", role = c("aut"))
@@ -27,12 +27,12 @@ Imports:
     GenomicRanges,
     IRanges,
     dplyr,
-    patchwork
+    patchwork,
+    magrittr
 Suggests: 
     knitr,
     rmarkdown,
     testthat (>= 2.1.0),
-    magrittr,
     tsibble
 Remotes:
     thomasp85/patchwork

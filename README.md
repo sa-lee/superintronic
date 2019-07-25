@@ -155,7 +155,7 @@ your BAM files are indexed by providing a target GRanges so coverage
 will be restricted to that set of ranges only.
 
 Once the coverage has been computed as a GRanges object, we can then
-intercet overlapping gene parts (from `collect_parts()`)
+intersect overlapping gene parts (from `collect_parts()`)
 
 ``` r
 cvg_over_features <- cvg %>% 
@@ -216,25 +216,63 @@ Coverage over a gene or a genomic region can be constructed via the
 aggregated over all samples that overlaps the target region:
 
 ``` r
-view_coverage(cvg_over_features, features)
+library(ggplot2)
+p <- cvg_over_features %>% 
+  mutate(strand = feature_strand) %>% 
+  view_coverage(score = score, colour = feature_type) + 
+  scale_color_brewer(palette = "Dark2") +
+  guides(colour = FALSE) +
+  labs(title = "Coverage over SRM")
+p
 ```
 
 <img src="man/figures/README-cov-01-1.png" width="100%" />
 
 By default, the coverage is aligned from the 5’ to the 3’ end of the
 target region, and exon regions are coloured green and intron parts are
-colour orange. The function returns a ggplot object, so extra
-annotations or layers can be added via the `ggplot2` library.
+colour orange (if you have set the strand on the input data, otherwise
+coverage is oriented 3’ to 5’).
+
+The function returns a ggplot object, so extra annotations or layers can
+be added via the `ggplot2` library.
+
+We can also create track plots to include the gene body by adding in
+segments with
+
+``` r
+gene_track <- view_segments(unnest_parts(features), 
+                            colour = feature_type)
+gene_track
+```
+
+<img src="man/figures/README-cov-02-1.png" width="100%" />
+
+And via the `patchwork`, generate tracks:
+
+``` r
+p / gene_track
+```
+
+<img src="man/figures/README-cov-03-1.png" width="100%" />
 
 Coverage scores can also be facetted if additional experimental design
 information has been added. For example, we can split the coverage by
 each sample or treatment group or cell type
 
 ``` r
-view_coverage(cvg_over_features, features, facets = "cell")
+p <- cvg_over_features %>% 
+  mutate(strand = feature_strand) %>% 
+  view_coverage(score = score, colour = feature_type, facets = "cell") + 
+  scale_color_brewer(palette = "Dark2") +
+  guides(colour = FALSE) +
+  labs(title = "Coverage over SRM")
+#> Warning: `as_quosure()` requires an explicit environment as of rlang 0.3.0.
+#> Please supply `env`.
+#> This warning is displayed once per session.
+p / gene_track + patchwork::plot_layout(heights = c(3, 1))
 ```
 
-<img src="man/figures/README-cov-02-1.png" width="100%" />
+<img src="man/figures/README-cov-04-1.png" width="100%" />
 
 ## Learning more
 

@@ -2,7 +2,7 @@
 % Please edit documentation in R/join.R
 \name{join_parts}
 \alias{join_parts}
-\title{Flatten exonic/intronic parts and intersect with ranges}
+\title{Expand exonic/intronic parts and intersect with ranges}
 \usage{
 join_parts(x, parts)
 }
@@ -11,6 +11,22 @@ join_parts(x, parts)
 
 \item{parts}{an annotation GRanges from \code{collect_parts()}}
 }
+\value{
+a GRanges object
+}
 \description{
-Flatten exonic/intronic parts and intersect with ranges
+Expand exonic/intronic parts and intersect with ranges
+}
+\details{
+This is a wrapper to \code{unnest_parts()} and
+\code{plyranges::join_overlap_intersect()}. It restricts the GRanges object \code{x}
+to the ranges that intersect the \code{exonic_parts} and \code{intronic_parts} columns
+from \code{parts}, the result is a GRanges object with additional columns:
+\itemize{
+\item \code{gene_id}, the gene_id from \code{features} corresponding to an exon/intron.
+\item \code{feature_type}, whether the range corresponds to an exon or intro feature.
+\item \code{feature_rank}, the rank of the exon/intron feature within a gene.
+\item \code{feature_length}, the width of the exon/intron
+\item \code{feature_strand}, the strand of the exon/intron
+}
 }

@@ -2,34 +2,32 @@
 #' 
 #' 
 #' @param data a GRanges object from `collect_parts()`
-#' @param group an optional 
-#' @param color an optional expression or bare variable in `data` that represents a feature 
+#' @param colour an optional expression or bare variable in `data` that represents a feature 
 #' 
 #' @importFrom ggplot2 geom_segment scale_x_reverse aes scale_y_continuous scale_colour_brewer theme_bw theme guides scale_x_continuous expand_scale
 #' @return a ggplot object
 #' @export
-view_segments <- function(data, color) {
+view_segments <- function(data, colour) {
   
-  color <- enquo(color)
+  colour <- enquo(colour)
   
-  seg1 <- as.data.frame(filter(data, !!color == "exon"))
-  seg2 <- as.data.frame(filter(data, !!color == "intron"))
+  seg1 <- as.data.frame(filter(data, !!colour == "exon"))
+  seg2 <- as.data.frame(filter(data, !!colour == "intron"))
   
   annotation_tracks <-  ggplot()  +
     geom_segment(data = seg1,
                  aes(x = start, xend = end, y = 0.5, yend = 0.5, 
-                     colour = !!color),
+                     colour = !!colour),
                  size = 10) +
     geom_segment(data = seg2,
                  aes(x = start, xend = end, y = 0.5, yend = 0.5, 
-                     colour = !!color),
+                     colour = !!colour),
                  lineend = "butt",
                  linejoin = "round",
                  size = 2) +
     scale_y_continuous(expand = c(0,0))+
     scale_colour_brewer(palette = "Dark2") +
     guides(colour = FALSE) +
-    theme_bw() +
     theme(
       axis.title.x = element_blank(),
       axis.title.y = element_blank(),

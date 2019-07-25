@@ -16,8 +16,23 @@ flatten <- function(x, type = "exon") {
   )
 }
 
+#' Expand the exonic/intronic parts of a gene into a long GRanges object
+#' 
+#' @param x a GRanges object from `collect_parts()`
+#' @details This function restricts the expands/unnests, the ranges from
+#' `collect_parts` the result is a GRanges object with the following columns: 
+#' 
+#' * `gene_id`, the gene_id from `features` corresponding to an exon/intron.
+#' * `feature_type`, whether the range corresponds to an exon or intro feature.
+#' * `feature_rank`, the rank of the exon/intron feature within a gene.
+#' * `feature_length`, the width of the exon/intron
+#' * `feature_strand`, the strand of the exon/intron
+#' 
+#' @return a GRanges object
+#' 
 #' @importFrom S4Vectors mcols<- mcols
-flatten_parts <- function(x) {
+#' @export
+unnest_parts <- function(x) {
   
   has_exin_cols <- sum(names(mcols(x)) %in% c("exonic_parts", "intronic_parts")) == 2
   if (!has_exin_cols) stop("Cannot find ")
@@ -30,35 +45,20 @@ flatten_parts <- function(x) {
   features_introns <- unlist(intronic, use.names = FALSE)
   mcols(features_introns) <- flatten(intronic, "intron")
   
-  plyranges::bind_ranges(features_exons, features_introns) %>% 
-    BiocGenerics::sort()
+  BiocGenerics::sort(plyranges::bind_ranges(features_exons, features_introns)) 
+    
 }
 
 
-#' Flatten exonic/intronic parts and intersect with ranges
+#' Expand exonic/intronic parts and intersect with ranges
 #' 
 #' @param x a GRanges object
 #' @param parts an annotation GRanges from `collect_parts()`
 #' 
-#' @export
-join_parts <- function(x, parts) {
-  f <- flatten_parts(parts)
-  plyranges::join_overlap_intersect(x, f)
-}
-
-
-#' Nest by Overlapping Ranges 
-#' 
-#' 
-#' @param ranges a GRanges object 
-#' @param features a GRanges object from `collect_parts()`
-#' @param .key one or more columns to group ranges
-#' @param .index one or more columns to group overlaps by
-#' 
-#' 
-#' @details This function restricts the coverage GRanges, `cvg` to the ranges
-#' that intersect the `exonic_parts` and `intronic_parts` ranges, the result
-#' is a GRanges object with additional columns: 
+#' @details This is a wrapper to `unnest_parts()` and 
+#' `plyranges::join_overlap_intersect()`. It restricts the GRanges object `x` 
+#' to the ranges that intersect the `exonic_parts` and `intronic_parts` columns
+#' from `parts`, the result is a GRanges object with additional columns: 
 #' 
 #' * `gene_id`, the gene_id from `features` corresponding to an exon/intron.
 #' * `feature_type`, whether the range corresponds to an exon or intro feature.
@@ -69,14 +69,7 @@ join_parts <- function(x, parts) {
 #' @return a GRanges object
 #' 
 #' @export
-nest_by_overlaps <- function(ranges, features, .key, .index) {
-  
-  .nest_vars <- rlang::quos(score = score, n_bases = width)
-  .groups <- rlang::quos(!!!.key, !!!.index)
-  
-  olap <- join_parts(ranges, features)
-  olap <- group_by(olap, !!!.groups)
-  
-  olap_reduced <- plyranges::reduce_ranges(olap, !!!.nest_vars)
-  olap_reduced
+join_parts <- function(x, parts) {
+  f <- unnest_parts(parts)
+  plyranges::join_overlap_intersect(x, f)
 }

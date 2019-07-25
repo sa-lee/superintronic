@@ -4,14 +4,12 @@
 \alias{view_segments}
 \title{An opinionated way of plotting intron/exon features}
 \usage{
-view_segments(data, color)
+view_segments(data, colour)
 }
 \arguments{
 \item{data}{a GRanges object from \code{collect_parts()}}
 
-\item{color}{an optional expression or bare variable in \code{data} that represents a feature}
-
-\item{group}{an optional}
+\item{colour}{an optional expression or bare variable in \code{data} that represents a feature}
 }
 \value{
 a ggplot object
