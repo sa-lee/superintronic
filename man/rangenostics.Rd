@@ -8,7 +8,6 @@
 \alias{count_grams}
 \alias{max_mean_shift}
 \alias{max_var_shift}
-\alias{gammy}
 \title{Rangewise diagnostics}
 \usage{
 lumpy(x, .size = .autosize(x))
@@ -24,13 +23,17 @@ count_grams(x, .size = .autosize(x))
 max_mean_shift(x, .size, .step)
 
 max_var_shift(x, .size, .step)
-
-gammy(x)
 }
 \arguments{
 \item{x}{a numeric vector or Rle object}
 
 \item{.size}{the integer size of the window}
+
+\item{.threshold}{a numeric}
+
+\item{.tol}{is equal to .Machine$double^0.5}
+
+\item{.step}{the integer step size to shift the window}
 }
 \description{
 Rangewise diagnostics

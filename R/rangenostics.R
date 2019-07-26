@@ -2,7 +2,10 @@
 #'
 #' @param x a numeric vector or Rle object
 #' @param .size the integer size of the window
-#'  
+#' @param .step the integer step size to shift the window
+#' @param .threshold a numeric
+#' @param .tol is equal to .Machine$double^0.5
+#'    
 #' @details These are inspired by the concept of cognostics by John Tukey, and related work in the
 #' area by Lee Wilkinson (graph theoretic scagnostics) and in time series analysis by Rob Hyndman.
 #' 
@@ -70,12 +73,4 @@ max_var_shift <- function(x, .size, .step) {
   
   list(max_var = max_var, max_inx = max_inx)
   
-}
-
-#' @rdname rangenostics
-#' @export
-gammy <- function(x) {
-  if (!requireNamespace("mgcv", quietly = TRUE)) {
-    stop("Package: mgcv required to run gammy diagnostics. Please install it.")
-  } 
 }

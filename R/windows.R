@@ -3,7 +3,6 @@
 #' @param .x An atomic vector or Rle object.
 #' @param .size The (integer) size of the window.
 #' @param .step The (integer) amount to shift the start of the window by.
-#' @param .start The (integer) starting position of the window
 #' @param .fun A function
 #' @param ... Additional arguments passed on to the mapped function
 #'
@@ -19,6 +18,7 @@
 #' stretch_map(1:5, .size = 1, .size = 2, mean)
 #' 
 #' 
+#' @importFrom methods as 
 #' @export
 #' @rdname windows
 tile_rle <- function(.x, .size = 1L, .fun, ...) {
@@ -35,6 +35,7 @@ tile_rle <- function(.x, .size = 1L, .fun, ...) {
   res
 }
 
+#' @importFrom methods is
 .autosize <- function(x) {
   if(is(x, "List")) return(pmax(as.integer(lengths(x) / 30), 1))
   pmax(as.integer(length(x) / 30), 1)

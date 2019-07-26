@@ -12,7 +12,8 @@
 #' to `[plyranges::group_by()]`, if no variables are provided then x is returned.
 #' 
 #' @examples 
-#' 
+#' suppressPackageStartupMessages(library("GenomicRanges"))
+#' suppressPackageStartupMessages(library("plyranges"))
 #' lvls <- paste0("chr",c(1:23))
 #' gr <- GRanges(
 #'   seqnames = factor(sample(lvls, 1000, replace = TRUE), levels = lvls),
@@ -21,6 +22,7 @@
 #'   gc = runif(1000)
 #' )
 #' split_ranges(gr, seqnames)
+#' 
 #' gr_by_grp <- group_by(gr, grp)
 #' split_ranges(gr_by_grp)   
 #' 

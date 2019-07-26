@@ -22,8 +22,6 @@ roll_rle(.x, .size = 1L, .step = 1L, .fun, ...)
 \item{...}{Additional arguments passed on to the mapped function}
 
 \item{.step}{The (integer) amount to shift the start of the window by.}
-
-\item{.start}{The (integer) starting position of the window}
 }
 \description{
 Map a function over an Rle in windows

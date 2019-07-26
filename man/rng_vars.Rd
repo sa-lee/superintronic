@@ -6,6 +6,9 @@
 \usage{
 rng_vars(...)
 }
+\arguments{
+\item{...}{a set of variables}
+}
 \value{
 A list of quosures
 }

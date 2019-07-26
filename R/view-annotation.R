@@ -40,7 +40,6 @@ view_segments <- function(data, colour) {
 }
 
 
-#' @export
 layer_segment <- function(data, y, ...) {
   stopifnot(is(data, "GRanges"))
   y <- enquo(y)

@@ -1,5 +1,5 @@
 ---
-title: "Introns, long-form coverage, and diagnostics with superintronic""
+title: "Introns, long-form coverage, and diagnostics with superintronic"
 output: rmarkdown::html_vignette
 vignette: >
   %\VignetteIndexEntry{intro_intron}
@@ -122,12 +122,7 @@ features over the experimental design via an intersect overlap join and nesting
 over the union ranges of an index  index (usually gene_id).
 
 ```{r, eval = TRUE}
-cvg_over_features <- nest_by_overlaps(cvg,
-                                      features, 
-                                      .key = dplyr::vars(sample_id),
-                                      .index = dplyr::vars(gene_id)
-)
-
+cvg_over_features <- join_parts(cvg, features) 
 cvg_over_features
 ```
 
@@ -161,12 +156,27 @@ Options for visualising coverage over a given range
 cvg_over_features <- join_parts(cvg, features) 
 
 cvg_over_features %>% 
-  view_coverage(., filter(features, gene_id == "ENSG00000116649"))
+  filter(gene_id == "ENSG00000116649") %>% 
+  view_coverage(score = score, colour = feature_type)
 
 cvg_over_features %>% 
-  view_coverage(., filter(features, gene_id == "ENSG00000116649"),
+  filter(gene_id == "ENSG00000116649") %>% 
+  view_coverage(score = score, colour = feature_type, 
                 facets = dplyr::vars(dex))
 ```
 
-This returns a regular old ggplot object, so segments can be overlaid with
-by adding to the plot object.
+This returns a regular old ggplot object, so segments can be overlaid
+via the `/` operator:
+
+```{r}
+cov_track <- cvg_over_features %>% 
+  filter(gene_id == "ENSG00000116649") %>% 
+  view_coverage(score = score, colour = feature_type, 
+                facets = dplyr::vars(dex))
+annotation <- features %>% 
+  filter(gene_id == "ENSG00000116649") %>% 
+  unnest_parts() %>% 
+  view_segments(colour = feature_type)
+
+cov_track / annotation
+```

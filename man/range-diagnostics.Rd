@@ -28,6 +28,7 @@ that index the ranges in \code{x}.}
 Rangle new features out of .ranges
 }
 \examples{
+suppressPackageStartupMessages(library("GenomicRanges"))
 lvls <- paste0("chr", 1:23)
 N <- 1e5
 gr <- GRanges(
@@ -37,7 +38,7 @@ grp = sample(letters[1:4], N, replace = TRUE),
 score = rnbinom(N, size = 5, mu = 25)
 )
 
-rangle(gr, score, seqnames, list(mean = mean))
+rangle(gr, score, rng_vars(seqnames), list(mean = mean))
 
 
 }
