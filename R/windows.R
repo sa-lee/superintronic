@@ -12,7 +12,7 @@
 #' increasing width [`stretch_rle()`]
 #' 
 #' @examples 
-#' x <- Rle(1:10, 1:10)
+#' x <- S4Vectors::Rle(1:10, 1:10)
 #' tile_rle(x, .size = 2, mean)
 #' roll_rle(1:5, .size = 2, .step = 1, mean)
 #' stretch_map(1:5, .size = 1, .size = 2, mean)
