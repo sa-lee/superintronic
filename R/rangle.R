@@ -12,6 +12,7 @@
 #' @importClassesFrom IRanges Ranges
 #' 
 #' @examples
+#' suppressPackageStartupMessages(library("GenomicRanges"))
 #' lvls <- paste0("chr", 1:23)
 #' N <- 1e5
 #' gr <- GRanges(
@@ -21,7 +22,7 @@
 #' score = rnbinom(N, size = 5, mu = 25)
 #' )
 #' 
-#' rangle(gr, score, seqnames, list(mean = mean))
+#' rangle(gr, score, rng_vars(seqnames), list(mean = mean))
 #' 
 #' 
 #' @export
@@ -104,12 +105,15 @@ check_funs <- function(.funs, .var_c) {
 
 #' Select range variables
 #' 
+#' @param ... a set of variables 
+#' 
 #' @description This helper function is used to provide semantics
 #' for selecting variables. It is useful for specifying the index 
 #' in `rangle()` or passing to scoped variants in `dplyr` like 
 #' `dplyr::mutate_at()`.
 #' 
 #' @return A list of quosures
+#' @export
 rng_vars <- function(...) {
   rlang::quos(...)
 }
