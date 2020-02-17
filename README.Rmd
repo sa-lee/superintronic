@@ -160,7 +160,9 @@ coverage by each sample or treatment group or cell type
 ```{r cov-04, fig.width = 8, fig.height = 6}
 p <- cvg_over_features %>% 
   mutate(strand = feature_strand) %>% 
-  view_coverage(score = score, colour = feature_type, facets = "cell") + 
+  view_coverage(score = score, 
+                colour = feature_type, 
+                facets = vars(cell)) + 
   scale_color_brewer(palette = "Dark2") +
   guides(colour = FALSE) +
   labs(title = "Coverage over SRM")

@@ -27,8 +27,8 @@ roll_rle(.x, .size = 1L, .step = 1L, .fun, ...)
 Map a function over an Rle in windows
 }
 \details{
-The map functions apply a function over non-overlapping windows \code{[tile_rle()]},
-overlapping windows \code{[roll_rle()]}, and windows with a fixed start but
+The map functions apply a function over non-overlapping windows \verb{[tile_rle()]},
+overlapping windows \verb{[roll_rle()]}, and windows with a fixed start but
 increasing width \code{\link[=stretch_rle]{stretch_rle()}}
 }
 \examples{

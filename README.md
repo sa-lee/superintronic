@@ -46,6 +46,8 @@ gene.
 
 ``` r
 library(superintronic)
+#> Warning: replacing previous import 'IRanges::slice' by 'plyranges::slice' when
+#> loading 'superintronic'
 suppressPackageStartupMessages(library(plyranges))
 
 features <- system.file("extdata", 
@@ -93,32 +95,32 @@ cvg <- compute_coverage_long(design, source = "bam")
 
 cvg 
 #> GRanges object with 98561 ranges and 6 metadata columns:
-#>           seqnames             ranges strand |  sample_id     cell
-#>              <Rle>          <IRanges>  <Rle> |   <factor> <factor>
-#>       [1]        1         1-11053772      * | SRR1039508   N61311
-#>       [2]        1  11053773-11053835      * | SRR1039508   N61311
-#>       [3]        1  11053836-11053839      * | SRR1039508   N61311
-#>       [4]        1  11053840-11053902      * | SRR1039508   N61311
-#>       [5]        1  11053903-11067865      * | SRR1039508   N61311
-#>       ...      ...                ...    ... .        ...      ...
-#>   [98557]        1  11359548-11362328      * | SRR1039521  N061011
-#>   [98558]        1  11362329-11362356      * | SRR1039521  N061011
-#>   [98559]        1  11362357-11362391      * | SRR1039521  N061011
-#>   [98560]        1  11362392-11362419      * | SRR1039521  N061011
-#>   [98561]        1 11362420-249250621      * | SRR1039521  N061011
-#>                dex    albut
-#>           <factor> <factor>
-#>       [1]    untrt    untrt
-#>       [2]    untrt    untrt
-#>       [3]    untrt    untrt
-#>       [4]    untrt    untrt
-#>       [5]    untrt    untrt
-#>       ...      ...      ...
-#>   [98557]      trt    untrt
-#>   [98558]      trt    untrt
-#>   [98559]      trt    untrt
-#>   [98560]      trt    untrt
-#>   [98561]      trt    untrt
+#>           seqnames             ranges strand |  sample_id     cell      dex
+#>              <Rle>          <IRanges>  <Rle> |   <factor> <factor> <factor>
+#>       [1]        1         1-11053772      * | SRR1039508   N61311    untrt
+#>       [2]        1  11053773-11053835      * | SRR1039508   N61311    untrt
+#>       [3]        1  11053836-11053839      * | SRR1039508   N61311    untrt
+#>       [4]        1  11053840-11053902      * | SRR1039508   N61311    untrt
+#>       [5]        1  11053903-11067865      * | SRR1039508   N61311    untrt
+#>       ...      ...                ...    ... .        ...      ...      ...
+#>   [98557]        1  11359548-11362328      * | SRR1039521  N061011      trt
+#>   [98558]        1  11362329-11362356      * | SRR1039521  N061011      trt
+#>   [98559]        1  11362357-11362391      * | SRR1039521  N061011      trt
+#>   [98560]        1  11362392-11362419      * | SRR1039521  N061011      trt
+#>   [98561]        1 11362420-249250621      * | SRR1039521  N061011      trt
+#>              albut
+#>           <factor>
+#>       [1]    untrt
+#>       [2]    untrt
+#>       [3]    untrt
+#>       [4]    untrt
+#>       [5]    untrt
+#>       ...      ...
+#>   [98557]    untrt
+#>   [98558]    untrt
+#>   [98559]    untrt
+#>   [98560]    untrt
+#>   [98561]    untrt
 #>                                                                                                           bam
 #>                                                                                                         <Rle>
 #>       [1] /Library/Frameworks/R.framework/Versions/3.6/Resources/library/airway/extdata/SRR1039508_subset.bam
@@ -262,13 +264,12 @@ each sample or treatment group or cell type
 ``` r
 p <- cvg_over_features %>% 
   mutate(strand = feature_strand) %>% 
-  view_coverage(score = score, colour = feature_type, facets = "cell") + 
+  view_coverage(score = score, 
+                colour = feature_type, 
+                facets = vars(cell)) + 
   scale_color_brewer(palette = "Dark2") +
   guides(colour = FALSE) +
   labs(title = "Coverage over SRM")
-#> Warning: `as_quosure()` requires an explicit environment as of rlang 0.3.0.
-#> Please supply `env`.
-#> This warning is displayed once per session.
 p / gene_track + patchwork::plot_layout(heights = c(3, 1))
 ```
 

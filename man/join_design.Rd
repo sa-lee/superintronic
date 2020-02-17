@@ -19,7 +19,7 @@ Merge a design matrix onto a GRanges object
 }
 \details{
 To summarise ranges features over variables in the experimental \code{design},
-we can join the \code{design`` matrix to a }ranges` object.
+we can join the \verb{design`` matrix to a }ranges` object.
 This function computes an inner join on the common key between the two
 objects and sorts by the key.
 }
