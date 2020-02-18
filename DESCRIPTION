@@ -21,7 +21,7 @@ Imports:
     rlang,
     BiocGenerics,
     GenomeInfoDb,
-    ggplot2,
+    ggplot2 (>= 3.2.1),
     BiocParallel,
     rtracklayer,
     GenomicRanges,

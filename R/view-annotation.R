@@ -4,7 +4,7 @@
 #' @param data a GRanges object from `collect_parts()`
 #' @param colour an optional expression or bare variable in `data` that represents a feature 
 #' 
-#' @importFrom ggplot2 geom_segment scale_x_reverse aes scale_y_continuous scale_colour_brewer theme_bw theme guides scale_x_continuous expansion
+#' @importFrom ggplot2 geom_segment scale_x_reverse aes scale_y_continuous scale_colour_brewer theme_bw theme guides scale_x_continuous expand_scale
 #' @return a ggplot object
 #' @export
 view_segments <- function(data, colour) {
@@ -49,7 +49,7 @@ layer_segment <- function(data, y, ...) {
   
 }
 
-rescale_by_width <- function(data, expand = ggplot2::expansion(mult = 0.02)){
+rescale_by_width <- function(data, expand = ggplot2::expand_scale(mult = 0.02)){
   
   if (S4Vectors::runValue(BiocGenerics::strand(data)) == "-") {
     return(
